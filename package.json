@@ -1,6 +1,7 @@
 {
   "name": "quiniela-mundial-2026",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
-  "description": "Quiniela Mundial 2026 - Energy Transfer & Friends"
+  "description": "Quiniela Mundial 2026"
 }
