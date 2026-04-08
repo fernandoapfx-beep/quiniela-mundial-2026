@@ -7,29 +7,31 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
-    .tab-active { border-bottom: 2px solid #22c55e; color: #22c55e !important; }
+    .tab-active { border-bottom: 3px solid #22c55e; color: #22c55e !important; }
     .fade-in { animation: fadeIn 0.25s ease-out; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     input[type=number] { -moz-appearance: textfield; }
     input[type=number]::-webkit-outer-spin-button,
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin:0; }
+    .pot-card { transition: all 0.2s; }
+    .pot-card.selected { border-color: #22c55e !important; background: rgba(34,197,94,0.08); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
 
-<!-- ===================== LOGIN SCREEN ===================== -->
+<!-- ===================== AUTH ===================== -->
 <div id="screen-auth" class="min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-md">
-
-    <!-- Logo -->
     <div class="text-center mb-8">
       <div class="text-7xl mb-3">⚽</div>
-      <h1 class="text-4xl font-extrabold text-white tracking-tight">Quiniela</h1>
+      <h1 class="text-4xl font-extrabold text-white">Quiniela</h1>
       <p class="text-green-400 text-2xl font-bold">Mundial 2026</p>
       <p class="text-gray-500 text-sm mt-1">🇺🇸 USA · 🇨🇦 Canadá · 🇲🇽 México</p>
     </div>
 
-    <!-- LOGIN FORM -->
+    <!-- LOGIN -->
     <div id="form-login" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl">
       <h2 class="text-xl font-bold mb-5 text-center">Iniciar Sesión</h2>
       <div class="space-y-3">
@@ -37,23 +39,21 @@
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
         <input id="login-password" type="password" placeholder="Contraseña"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
-        <button onclick="doLogin()"
-          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
+        <button onclick="doLogin()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
           Entrar ⚽
         </button>
         <div id="login-error" class="text-red-400 text-sm text-center hidden"></div>
       </div>
       <p class="text-center text-gray-500 text-sm mt-4">
-        ¿Primera vez?
-        <button onclick="showRegisterForm()" class="text-green-400 hover:underline ml-1">Crear cuenta</button>
+        ¿Primera vez? <button onclick="showRegisterForm()" class="text-green-400 hover:underline ml-1">Crear cuenta</button>
       </p>
     </div>
 
-    <!-- REGISTER FORM -->
+    <!-- REGISTER -->
     <div id="form-register" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
       <h2 class="text-xl font-bold mb-5 text-center">Crear Cuenta</h2>
       <div class="space-y-3">
-        <input id="reg-name" type="text" placeholder="Tu apodo en la quiniela (ej: El Crack)"
+        <input id="reg-name" type="text" placeholder="Tu apodo (ej: El Crack)"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
         <input id="reg-email" type="email" placeholder="Correo electrónico"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
@@ -61,26 +61,64 @@
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
         <input id="reg-code" type="text" placeholder="Código de invitación"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
-        <button onclick="doRegister()"
-          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
-          Unirse al Quiniela 🎯
+
+        <div class="pt-1">
+          <p class="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-widest">¿En qué pote(s) quieres jugar?</p>
+          <div class="space-y-2">
+            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('GROUP')" id="pot-card-GROUP">
+              <div class="flex items-center gap-3">
+                <div id="pot-check-GROUP" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
+                  <svg class="hidden w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-sm">⚽ Fase de Grupos</div>
+                  <div class="text-xs text-gray-400">72 partidos · Grupos A–L</div>
+                </div>
+                <div id="reg-amt-GROUP" class="text-yellow-400 font-bold text-sm"></div>
+              </div>
+            </div>
+            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('KNOCKOUT')" id="pot-card-KNOCKOUT">
+              <div class="flex items-center gap-3">
+                <div id="pot-check-KNOCKOUT" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
+                  <svg class="hidden w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-sm">🏆 Fase Eliminatoria</div>
+                  <div class="text-xs text-gray-400">32 partidos · R32 hasta Final</div>
+                </div>
+                <div id="reg-amt-KNOCKOUT" class="text-yellow-400 font-bold text-sm"></div>
+              </div>
+            </div>
+            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('COMPLETE')" id="pot-card-COMPLETE">
+              <div class="flex items-center gap-3">
+                <div id="pot-check-COMPLETE" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
+                  <svg class="hidden w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-sm">🌍 Quiniela Completa</div>
+                  <div class="text-xs text-gray-400">104 partidos · Todo el torneo</div>
+                </div>
+                <div id="reg-amt-COMPLETE" class="text-yellow-400 font-bold text-sm"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="doRegister()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
+          Unirse 🎯
         </button>
-        <div id="reg-error" class="text-red-400 text-sm text-center hidden"></div>
+        <div id="reg-error"   class="text-red-400 text-sm text-center hidden"></div>
         <div id="reg-success" class="text-green-400 text-sm text-center hidden"></div>
       </div>
       <p class="text-center text-gray-500 text-sm mt-4">
-        ¿Ya tienes cuenta?
-        <button onclick="showLoginForm()" class="text-green-400 hover:underline ml-1">Inicia sesión</button>
+        ¿Ya tienes cuenta? <button onclick="showLoginForm()" class="text-green-400 hover:underline ml-1">Inicia sesión</button>
       </p>
     </div>
-
   </div>
 </div>
 
-<!-- ===================== MAIN APP ===================== -->
+<!-- ===================== APP ===================== -->
 <div id="screen-app" class="hidden min-h-screen flex flex-col">
-
-  <!-- Header -->
   <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -90,675 +128,521 @@
           <p id="greeting" class="text-xs text-green-400 leading-tight"></p>
         </div>
       </div>
-      <button onclick="doLogout()" class="text-xs text-gray-400 hover:text-red-400 border border-gray-700 px-3 py-1.5 rounded-lg transition-colors">
-        Salir
-      </button>
+      <button onclick="doLogout()" class="text-xs text-gray-400 hover:text-red-400 border border-gray-700 px-3 py-1.5 rounded-lg">Salir</button>
     </div>
-
-    <!-- Tabs -->
-    <div class="max-w-3xl mx-auto flex overflow-x-auto border-t border-gray-800 no-scrollbar">
-      <button onclick="goTab('tabla')" id="tb-tabla"
-        class="tab-btn tab-active flex-1 py-3 text-sm font-semibold whitespace-nowrap px-2">🏆 Tabla</button>
-      <button onclick="goTab('partidos')" id="tb-partidos"
-        class="tab-btn flex-1 py-3 text-sm font-semibold text-gray-400 whitespace-nowrap px-2">⚽ Partidos</button>
-      <button onclick="goTab('mispicks')" id="tb-mispicks"
-        class="tab-btn flex-1 py-3 text-sm font-semibold text-gray-400 whitespace-nowrap px-2">📋 Mis Picks</button>
-      <button onclick="goTab('admin')" id="tb-admin"
-        class="tab-btn flex-1 py-3 text-sm font-semibold text-gray-400 whitespace-nowrap px-2 hidden">⚙️ Admin</button>
+    <div class="max-w-3xl mx-auto flex overflow-x-auto no-scrollbar border-t border-gray-800">
+      <button onclick="goTab('potes')"    id="tb-potes"    class="tab-btn tab-active flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">💰 Potes</button>
+      <button onclick="goTab('tabla')"    id="tb-tabla"    class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">🏆 Tabla</button>
+      <button onclick="goTab('partidos')" id="tb-partidos" class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">⚽ Partidos</button>
+      <button onclick="goTab('mispicks')" id="tb-mispicks" class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">📋 Mis Picks</button>
+      <button onclick="goTab('admin')"    id="tb-admin"    class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2 hidden">⚙️ Admin</button>
     </div>
   </header>
 
-  <!-- Content area -->
   <main class="flex-1 max-w-3xl mx-auto w-full px-3 py-4">
-
-    <!-- TAB: TABLA -->
-    <div id="tab-tabla" class="tab-panel fade-in">
-      <div class="flex gap-2 mb-4">
-        <button onclick="setLbPhase('GROUP')" id="lb-GROUP"
-          class="lb-btn flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-bold">⚽ Grupos</button>
-        <button onclick="setLbPhase('KNOCKOUT')" id="lb-KNOCKOUT"
-          class="lb-btn flex-1 bg-gray-800 text-gray-400 py-2.5 rounded-xl text-sm font-bold">🏆 Eliminatorias</button>
+    <div id="tab-potes"    class="tab-panel fade-in"><div id="potes-container"></div></div>
+    <div id="tab-tabla"    class="tab-panel hidden fade-in">
+      <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+        <button onclick="setLbPot('GROUP')"    id="lbp-GROUP"    class="lbp-btn bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">⚽ Grupos</button>
+        <button onclick="setLbPot('KNOCKOUT')" id="lbp-KNOCKOUT" class="lbp-btn bg-gray-800 text-gray-400 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">🏆 Eliminatorias</button>
+        <button onclick="setLbPot('COMPLETE')" id="lbp-COMPLETE" class="lbp-btn bg-gray-800 text-gray-400 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">🌍 Completa</button>
       </div>
       <div id="leaderboard"></div>
     </div>
-
-    <!-- TAB: PARTIDOS -->
     <div id="tab-partidos" class="tab-panel hidden fade-in">
-      <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
-        <button onclick="setMatchPhase('ALL')" id="mp-ALL"
-          class="mp-btn bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Todos</button>
-        <button onclick="setMatchPhase('GROUP')" id="mp-GROUP"
-          class="mp-btn bg-gray-800 text-gray-400 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Fase Grupos</button>
-        <button onclick="setMatchPhase('KNOCKOUT')" id="mp-KNOCKOUT"
-          class="mp-btn bg-gray-800 text-gray-400 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">Eliminatorias</button>
+      <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+        <button onclick="setMatchPhase('ALL')"      id="mp-ALL"      class="mp-btn bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Todos</button>
+        <button onclick="setMatchPhase('GROUP')"    id="mp-GROUP"    class="mp-btn bg-gray-800 text-gray-400 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Grupos</button>
+        <button onclick="setMatchPhase('KNOCKOUT')" id="mp-KNOCKOUT" class="mp-btn bg-gray-800 text-gray-400 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Eliminatorias</button>
       </div>
       <div id="matches-list"></div>
     </div>
-
-    <!-- TAB: MIS PICKS -->
-    <div id="tab-mispicks" class="tab-panel hidden fade-in">
-      <div id="mypicks-container"></div>
-    </div>
-
-    <!-- TAB: ADMIN -->
-    <div id="tab-admin" class="tab-panel hidden fade-in">
-      <div id="admin-container"></div>
-    </div>
-
+    <div id="tab-mispicks" class="tab-panel hidden fade-in"><div id="mypicks-container"></div></div>
+    <div id="tab-admin"    class="tab-panel hidden fade-in"><div id="admin-container"></div></div>
   </main>
 </div>
 
-<!-- Toast -->
-<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-50 hidden transition-all"></div>
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-50 hidden"></div>
 
-<!-- ===================== SCRIPT ===================== -->
 <script>
-// -----------------------------------------------
-// CONFIG
-// -----------------------------------------------
-const SUPABASE_URL  = 'https://qxebgqqyyvknmlmqebgq.supabase.co';
-const SUPABASE_KEY  = 'sb_publishable_FVmzGuPA45n9qyET5IR3Dg_oRkNgxpg';
-const INVITE_CODE   = 'MUNDIAL2026'; // cambia esto cuando quieras
-
-const { createClient } = supabase;
+const SUPABASE_URL = 'https://qxebgqqyyvknmlmqebgq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_FVmzGuPA45n9qyET5IR3Dg_oRkNgxpg';
+const INVITE_CODE  = 'MUNDIAL2026';
+const {createClient} = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// -----------------------------------------------
-// STATE
-// -----------------------------------------------
-let session      = null;
-let profile      = null;
-let allMatches   = [];
-let myPreds      = {};   // matchId → prediction row
-let allPreds     = [];   // all predictions (for leaderboard)
-let lbPhase      = 'GROUP';
-let matchPhase   = 'ALL';
+let session=null,profile=null,allMatches=[],myPreds={},allPreds=[],allPots=[],myUserPots=[],allUserPots=[];
+let selectedPots={GROUP:false,KNOCKOUT:false,COMPLETE:false};
+let lbPot='GROUP',matchPhase='ALL';
 
-// -----------------------------------------------
-// BOOT
-// -----------------------------------------------
-(async () => {
-  const { data } = await db.auth.getSession();
-  if (data.session) {
-    session = data.session;
-    await boot();
-  } else {
-    show('screen-auth');
-  }
-
-  db.auth.onAuthStateChange(async (evt, s) => {
-    if (evt === 'SIGNED_IN' && s) {
-      session = s;
-      await boot();
-    }
-    if (evt === 'SIGNED_OUT') {
-      session = profile = null;
-      allMatches = []; myPreds = {}; allPreds = [];
-      showLoginForm();
-      show('screen-auth');
-    }
+(async()=>{
+  await loadPots(); renderRegisterAmounts();
+  const {data}=await db.auth.getSession();
+  if(data.session){session=data.session;await boot();}
+  else show('screen-auth');
+  db.auth.onAuthStateChange(async(evt,s)=>{
+    if(evt==='SIGNED_IN'&&s){session=s;await boot();}
+    if(evt==='SIGNED_OUT'){session=profile=null;showLoginForm();show('screen-auth');}
   });
 })();
 
-async function boot() {
+async function boot(){
   await loadProfile();
-  await loadAll();
+  await Promise.all([loadPots(),loadMatches(),loadMyPreds(),loadAllPreds(),loadAllUserPots()]);
   renderApp();
 }
 
-// -----------------------------------------------
 // AUTH
-// -----------------------------------------------
-async function doLogin() {
-  const email    = v('login-email');
-  const password = v('login-password');
-  const errEl    = el('login-error');
+async function doLogin(){
+  const email=v('login-email'),password=v('login-password'),errEl=el('login-error');
   hide(errEl);
-  if (!email || !password) { showEl(errEl, 'Completa todos los campos'); return; }
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  if (error) showEl(errEl, 'Correo o contraseña incorrectos');
+  if(!email||!password){showEl(errEl,'Completa todos los campos');return;}
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error) showEl(errEl,'Correo o contraseña incorrectos');
+}
+async function doRegister(){
+  const name=v('reg-name'),email=v('reg-email'),password=v('reg-password'),code=v('reg-code').toUpperCase();
+  const errEl=el('reg-error'),sucEl=el('reg-success');
+  hide(errEl);hide(sucEl);
+  if(!name||!email||!password||!code){showEl(errEl,'Completa todos los campos');return;}
+  if(code!==INVITE_CODE){showEl(errEl,'Código de invitación incorrecto');return;}
+  if(password.length<6){showEl(errEl,'Contraseña mínimo 6 caracteres');return;}
+  const chosen=Object.entries(selectedPots).filter(([,v])=>v).map(([k])=>k);
+  if(!chosen.length){showEl(errEl,'Selecciona al menos un pote');return;}
+  const {data,error}=await db.auth.signUp({email,password,options:{data:{display_name:name}}});
+  if(error){showEl(errEl,error.message);return;}
+  if(data.user){
+    for(const potId of chosen){
+      await db.from('user_pots').insert({user_id:data.user.id,pot_id:potId,confirmed:false});
+    }
+  }
+  showEl(sucEl,'✅ Cuenta creada. Ya puedes iniciar sesión.');
+}
+async function doLogout(){await db.auth.signOut();}
+
+// DATA
+async function loadProfile(){const {data}=await db.from('profiles').select('*').eq('id',session.user.id).single();profile=data;}
+async function loadPots(){const {data}=await db.from('pots').select('*').order('id');allPots=data||[];}
+async function loadMatches(){const {data}=await db.from('matches').select('*').order('match_date',{ascending:true});allMatches=data||[];}
+async function loadMyPreds(){const {data}=await db.from('predictions').select('*').eq('user_id',session.user.id);myPreds={};(data||[]).forEach(p=>{myPreds[p.match_id]=p;});}
+async function loadAllPreds(){const {data}=await db.from('predictions').select('*, profiles(display_name)');allPreds=data||[];}
+async function loadAllUserPots(){
+  const {data}=await db.from('user_pots').select('*, profiles(display_name, email)');
+  allUserPots=data||[];
+  myUserPots=(data||[]).filter(u=>u.user_id===session?.user?.id);
+}
+async function loadAll(){await Promise.all([loadMatches(),loadMyPreds(),loadAllPreds(),loadAllUserPots()]);}
+
+// POINTS
+function calcPoints(ph,pa,ah,aa){
+  if(ah===null||aa===null)return null;
+  if(ph===ah&&pa===aa)return 5;
+  const pr=ph>pa?'H':ph<pa?'A':'D',ar=ah>aa?'H':ah<aa?'A':'D';
+  return pr===ar?3:0;
 }
 
-async function doRegister() {
-  const name     = v('reg-name');
-  const email    = v('reg-email');
-  const password = v('reg-password');
-  const code     = v('reg-code').toUpperCase();
-  const errEl    = el('reg-error');
-  const sucEl    = el('reg-success');
-  hide(errEl); hide(sucEl);
-
-  if (!name || !email || !password || !code) { showEl(errEl, 'Completa todos los campos'); return; }
-  if (code !== INVITE_CODE)                  { showEl(errEl, 'Código de invitación incorrecto'); return; }
-  if (password.length < 6)                   { showEl(errEl, 'Contraseña mínimo 6 caracteres'); return; }
-
-  const { error } = await db.auth.signUp({
-    email, password,
-    options: { data: { display_name: name } }
-  });
-  if (error) showEl(errEl, error.message);
-  else       showEl(sucEl, '✅ Cuenta creada. Revisa tu correo para confirmar y luego inicia sesión.');
-}
-
-async function doLogout() {
-  await db.auth.signOut();
-}
-
-// -----------------------------------------------
-// DATA LOADING
-// -----------------------------------------------
-async function loadProfile() {
-  const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  profile = data;
-}
-
-async function loadAll() {
-  await Promise.all([loadMatches(), loadMyPreds(), loadAllPreds()]);
-}
-
-async function loadMatches() {
-  const { data } = await db.from('matches').select('*').order('match_date', { ascending: true });
-  allMatches = data || [];
-}
-
-async function loadMyPreds() {
-  const { data } = await db.from('predictions').select('*').eq('user_id', session.user.id);
-  myPreds = {};
-  (data || []).forEach(p => { myPreds[p.match_id] = p; });
-}
-
-async function loadAllPreds() {
-  const { data } = await db.from('predictions').select('*, profiles(display_name)');
-  allPreds = data || [];
-}
-
-// -----------------------------------------------
-// POINTS LOGIC
-// -----------------------------------------------
-function calcPoints(ph, pa, ah, aa) {
-  if (ah === null || aa === null) return null;
-  if (ph === ah && pa === aa) return 5; // marcador exacto
-  const pr = ph > pa ? 'H' : ph < pa ? 'A' : 'D';
-  const ar = ah > aa ? 'H' : ah < aa ? 'A' : 'D';
-  return pr === ar ? 3 : 0;
-}
-
-// -----------------------------------------------
 // RENDER APP
-// -----------------------------------------------
-function renderApp() {
+function renderApp(){
   show('screen-app');
-  el('greeting').textContent = `Hola, ${profile?.display_name || ''}!`;
-  if (profile?.is_admin) el('tb-admin').classList.remove('hidden');
-  goTab('tabla');
+  el('greeting').textContent=`Hola, ${profile?.display_name||''}!`;
+  if(profile?.is_admin)el('tb-admin').classList.remove('hidden');
+  goTab('potes');
 }
 
-// -----------------------------------------------
-// TAB SWITCHING
-// -----------------------------------------------
-function goTab(tab) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('tab-active');
-    b.classList.add('text-gray-400');
-  });
+// TABS
+function goTab(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('tab-active');b.classList.add('text-gray-400');});
   el(`tab-${tab}`).classList.remove('hidden');
   el(`tb-${tab}`).classList.add('tab-active');
   el(`tb-${tab}`).classList.remove('text-gray-400');
-
-  if (tab === 'tabla')    renderLeaderboard();
-  if (tab === 'partidos') renderMatches();
-  if (tab === 'mispicks') renderMyPicks();
-  if (tab === 'admin')    renderAdmin();
+  if(tab==='potes')renderPotes();
+  if(tab==='tabla')renderLeaderboard();
+  if(tab==='partidos')renderMatches();
+  if(tab==='mispicks')renderMyPicks();
+  if(tab==='admin')renderAdmin();
 }
 
-// -----------------------------------------------
-// LEADERBOARD
-// -----------------------------------------------
-function setLbPhase(phase) {
-  lbPhase = phase;
-  document.querySelectorAll('.lb-btn').forEach(b => {
-    b.classList.remove('bg-green-600','text-white');
-    b.classList.add('bg-gray-800','text-gray-400');
+// POTES TAB
+function fmtMoney(a){return(!a||a===0)?'Por definir':'$'+Number(a).toLocaleString('es-MX');}
+
+function renderPotes(){
+  const defs=[
+    {id:'GROUP',    emoji:'⚽',name:'Fase de Grupos',    desc:'72 partidos · Grupos A–L'},
+    {id:'KNOCKOUT', emoji:'🏆',name:'Fase Eliminatoria', desc:'32 partidos · R32 hasta Final'},
+    {id:'COMPLETE', emoji:'🌍',name:'Quiniela Completa', desc:'104 partidos · Todo el torneo'},
+  ];
+  let html=`<h2 class="text-lg font-bold mb-4">💰 Potes del Torneo</h2><div class="space-y-4">`;
+  for(const pd of defs){
+    const pot=allPots.find(p=>p.id===pd.id)||{};
+    const confirmed=allUserPots.filter(u=>u.pot_id===pd.id&&u.confirmed);
+    const pending=allUserPots.filter(u=>u.pot_id===pd.id&&!u.confirmed);
+    const myEnroll=myUserPots.find(u=>u.pot_id===pd.id);
+    const isConfirmed=myEnroll?.confirmed;
+    const isPending=myEnroll&&!myEnroll.confirmed;
+    const total=(pot.amount||0)*confirmed.length;
+    html+=`
+      <div class="bg-gray-900 border ${isConfirmed?'border-green-600':isPending?'border-yellow-600':'border-gray-800'} rounded-2xl overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="text-2xl mb-1">${pd.emoji}</div>
+              <h3 class="font-extrabold text-lg">${pd.name}</h3>
+              <p class="text-xs text-gray-400">${pd.desc}</p>
+            </div>
+            <div class="text-right">
+              <div class="text-3xl font-extrabold text-yellow-400">${fmtMoney(pot.amount)}</div>
+              <div class="text-xs text-gray-500">por participante</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="bg-gray-800 rounded-xl p-2.5 text-center">
+              <div class="text-xl font-extrabold text-green-400">${confirmed.length}</div>
+              <div class="text-xs text-gray-400">Confirmados</div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-2.5 text-center">
+              <div class="text-xl font-extrabold text-yellow-400">${pending.length}</div>
+              <div class="text-xs text-gray-400">Pendientes</div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-2.5 text-center">
+              <div class="text-xl font-extrabold text-purple-400">${fmtMoney(total)}</div>
+              <div class="text-xs text-gray-400">Pote total</div>
+            </div>
+          </div>
+          ${myEnroll
+            ?`<div class="rounded-xl p-3 text-center text-sm font-semibold ${isConfirmed?'bg-green-900/40 text-green-400':'bg-yellow-900/40 text-yellow-400'}">
+                ${isConfirmed?'✅ Confirmado — estás jugando este pote':'⏳ Inscrito — pendiente de confirmación de pago'}
+              </div>`
+            :`<div class="rounded-xl p-3 text-center text-sm text-gray-500 bg-gray-800">No estás inscrito en este pote</div>`
+          }
+        </div>
+        ${confirmed.length?`
+          <div class="border-t border-gray-800 px-4 py-3">
+            <p class="text-xs text-gray-500 mb-2 font-semibold">JUGADORES CONFIRMADOS</p>
+            <div class="flex flex-wrap gap-2">
+              ${confirmed.map(u=>`<span class="bg-gray-800 text-xs px-2.5 py-1 rounded-full text-gray-300">${u.profiles?.display_name||'Jugador'}</span>`).join('')}
+            </div>
+          </div>`:''}
+      </div>`;
+  }
+  html+=`</div>`;
+  el('potes-container').innerHTML=html;
+}
+
+function renderRegisterAmounts(){
+  ['GROUP','KNOCKOUT','COMPLETE'].forEach(id=>{
+    const pot=allPots.find(p=>p.id===id);
+    const el2=el(`reg-amt-${id}`);
+    if(el2&&pot?.amount>0)el2.textContent=fmtMoney(pot.amount);
   });
-  el(`lb-${phase}`).classList.add('bg-green-600','text-white');
-  el(`lb-${phase}`).classList.remove('bg-gray-800','text-gray-400');
+}
+
+// POT SELECTOR
+function togglePot(potId){
+  selectedPots[potId]=!selectedPots[potId];
+  const card=el(`pot-card-${potId}`),chk=el(`pot-check-${potId}`);
+  if(selectedPots[potId]){card.classList.add('selected');chk.querySelector('svg').classList.remove('hidden');chk.classList.add('border-green-500');}
+  else{card.classList.remove('selected');chk.querySelector('svg').classList.add('hidden');chk.classList.remove('border-green-500');}
+}
+
+// LEADERBOARD
+function setLbPot(pot){
+  lbPot=pot;
+  document.querySelectorAll('.lbp-btn').forEach(b=>{b.classList.remove('bg-green-600','text-white');b.classList.add('bg-gray-800','text-gray-400');});
+  el(`lbp-${pot}`).classList.add('bg-green-600','text-white');
+  el(`lbp-${pot}`).classList.remove('bg-gray-800','text-gray-400');
   renderLeaderboard();
 }
 
-function renderLeaderboard() {
-  const phaseMatches = allMatches.filter(m => m.phase === lbPhase && m.status === 'FINISHED');
-
-  // Collect users
-  const users = {};
-  allPreds.forEach(p => {
-    if (!users[p.user_id]) {
-      users[p.user_id] = { name: p.profiles?.display_name || 'Jugador', pts: 0, hits: 0, total: 0 };
-    }
+function renderLeaderboard(){
+  const confirmedIds=allUserPots.filter(u=>u.pot_id===lbPot&&u.confirmed).map(u=>u.user_id);
+  if(!confirmedIds.length){el('leaderboard').innerHTML=empty('📊','Aún no hay participantes confirmados en este pote');return;}
+  const phases=lbPot==='GROUP'?['GROUP']:lbPot==='KNOCKOUT'?['KNOCKOUT']:['GROUP','KNOCKOUT'];
+  const done=allMatches.filter(m=>phases.includes(m.phase)&&m.status==='FINISHED');
+  const users={};
+  confirmedIds.forEach(uid=>{
+    const up=allUserPots.find(u=>u.user_id===uid&&u.pot_id===lbPot);
+    users[uid]={name:up?.profiles?.display_name||'Jugador',pts:0,hits:0,total:0};
   });
-
-  // Score each finished match
-  phaseMatches.forEach(m => {
-    allPreds.filter(p => p.match_id === m.id).forEach(p => {
-      if (!users[p.user_id]) return;
-      const pts = calcPoints(p.predicted_home, p.predicted_away, m.home_score, m.away_score);
-      if (pts !== null) {
-        users[p.user_id].pts   += pts;
-        users[p.user_id].total += 1;
-        if (pts > 0) users[p.user_id].hits += 1;
-      }
+  done.forEach(m=>{
+    allPreds.filter(p=>p.match_id===m.id&&confirmedIds.includes(p.user_id)).forEach(p=>{
+      if(!users[p.user_id])return;
+      const pts=calcPoints(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
+      if(pts!==null){users[p.user_id].pts+=pts;users[p.user_id].total++;if(pts>0)users[p.user_id].hits++;}
     });
   });
-
-  const sorted = Object.entries(users).sort((a, b) => b[1].pts - a[1].pts);
-  const medals  = ['🥇','🥈','🥉'];
-
-  if (sorted.length === 0) {
-    el('leaderboard').innerHTML = empty('📊','La tabla aparecerá cuando haya predicciones y resultados');
-    return;
-  }
-
-  el('leaderboard').innerHTML = `
+  const sorted=Object.entries(users).sort((a,b)=>b[1].pts-a[1].pts);
+  const medals=['🥇','🥈','🥉'];
+  const pot=allPots.find(p=>p.id===lbPot)||{};
+  const totalPot=(pot.amount||0)*confirmedIds.length;
+  el('leaderboard').innerHTML=`
+    ${pot.amount>0?`<div class="bg-yellow-900/30 border border-yellow-700 rounded-xl p-3 mb-4 flex justify-between items-center">
+      <span class="text-yellow-400 font-bold">${pot.name}</span>
+      <span class="text-2xl font-extrabold text-yellow-400">${fmtMoney(totalPot)}</span>
+    </div>`:''}
     <div class="space-y-2">
-      ${sorted.map(([uid, d], i) => {
-        const isMe = uid === session?.user.id;
-        return `
-          <div class="bg-gray-900 border ${isMe ? 'border-green-500' : 'border-gray-800'} rounded-xl p-4 flex items-center gap-3">
-            <div class="text-2xl w-8 text-center">${medals[i] ?? i+1}</div>
-            <div class="flex-1 min-w-0">
-              <div class="font-bold truncate ${isMe ? 'text-green-400' : 'text-white'}">
-                ${d.name}${isMe ? ' <span class="text-xs font-normal">(Tú)</span>' : ''}
-              </div>
-              <div class="text-xs text-gray-500">${d.hits}/${d.total} aciertos</div>
-            </div>
-            <div class="text-right">
-              <div class="text-2xl font-extrabold text-yellow-400">${d.pts}</div>
-              <div class="text-xs text-gray-500">pts</div>
-            </div>
-          </div>`;
-      }).join('')}
+    ${sorted.map(([uid,d],i)=>{
+      const isMe=uid===session?.user?.id;
+      return`<div class="bg-gray-900 border ${isMe?'border-green-500':'border-gray-800'} rounded-xl p-4 flex items-center gap-3">
+        <div class="text-2xl w-8 text-center">${medals[i]??i+1}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold truncate ${isMe?'text-green-400':'text-white'}">${d.name}${isMe?' <span class="text-xs font-normal">(Tú)</span>':''}</div>
+          <div class="text-xs text-gray-500">${d.hits}/${d.total} aciertos</div>
+        </div>
+        <div class="text-right">
+          <div class="text-2xl font-extrabold text-yellow-400">${d.pts}</div>
+          <div class="text-xs text-gray-500">pts</div>
+        </div>
+      </div>`;
+    }).join('')}
     </div>`;
 }
 
-// -----------------------------------------------
 // MATCHES
-// -----------------------------------------------
-function setMatchPhase(phase) {
-  matchPhase = phase;
-  document.querySelectorAll('.mp-btn').forEach(b => {
-    b.classList.remove('bg-green-600','text-white');
-    b.classList.add('bg-gray-800','text-gray-400');
-  });
+function canPredict(phase){
+  if(phase==='GROUP')    return myUserPots.some(u=>u.confirmed&&(u.pot_id==='GROUP'||u.pot_id==='COMPLETE'));
+  if(phase==='KNOCKOUT') return myUserPots.some(u=>u.confirmed&&(u.pot_id==='KNOCKOUT'||u.pot_id==='COMPLETE'));
+  return false;
+}
+
+function setMatchPhase(phase){
+  matchPhase=phase;
+  document.querySelectorAll('.mp-btn').forEach(b=>{b.classList.remove('bg-green-600','text-white');b.classList.add('bg-gray-800','text-gray-400');});
   el(`mp-${phase}`).classList.add('bg-green-600','text-white');
   el(`mp-${phase}`).classList.remove('bg-gray-800','text-gray-400');
   renderMatches();
 }
 
-function renderMatches() {
-  const list = matchPhase === 'ALL' ? allMatches : allMatches.filter(m => m.phase === matchPhase);
-
-  if (!list.length) {
-    el('matches-list').innerHTML = empty('⚽','No hay partidos cargados aún' + (profile?.is_admin ? '<br><span class="text-xs">Ve a Admin → Sincronizar</span>' : ''));
-    return;
-  }
-
-  el('matches-list').innerHTML = `<div class="space-y-3">${list.map(matchCard).join('')}</div>`;
+function renderMatches(){
+  const list=matchPhase==='ALL'?allMatches:allMatches.filter(m=>m.phase===matchPhase);
+  if(!list.length){el('matches-list').innerHTML=empty('⚽','No hay partidos cargados');return;}
+  el('matches-list').innerHTML=`<div class="space-y-3">${list.map(matchCard).join('')}</div>`;
 }
 
-function matchCard(m) {
-  const pred     = myPreds[m.id];
-  const now      = new Date();
-  const mDate    = new Date(m.match_date);
-  const locked   = mDate <= now || m.status !== 'SCHEDULED';
-  const finished = m.status === 'FINISHED';
-  const pts      = finished && pred ? calcPoints(pred.predicted_home, pred.predicted_away, m.home_score, m.away_score) : null;
-
-  const dateStr = mDate.toLocaleDateString('es-MX', { weekday:'short', month:'short', day:'numeric' });
-  const timeStr = mDate.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
-
-  const statusBadge = {
-    LIVE:      '<span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">🔴 EN VIVO</span>',
-    FINISHED:  '<span class="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">Finalizado</span>',
-    SCHEDULED: '<span class="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded-full">Pendiente</span>',
-  }[m.status] || '';
-
-  const phaseLbl = m.phase === 'GROUP'
-    ? `Grupo ${m.group_name ?? ''} · J${m.matchday ?? ''}`
-    : phaseLabel(m.phase);
-
-  let bottom = '';
-  if (finished) {
-    const color = pts === 5 ? 'text-green-400' : pts === 3 ? 'text-yellow-400' : 'text-red-400';
-    bottom = `
-      <div class="mt-3 pt-3 border-t border-gray-800 grid grid-cols-3 gap-2 text-center">
-        <div><div class="text-xs text-gray-500 mb-0.5">Resultado</div>
-          <div class="font-bold text-white">${m.home_score} - ${m.away_score}</div></div>
-        <div><div class="text-xs text-gray-500 mb-0.5">Tu pick</div>
-          <div class="font-bold ${pred ? color : 'text-gray-600'}">${pred ? `${pred.predicted_home}-${pred.predicted_away}` : 'N/A'}</div></div>
-        <div><div class="text-xs text-gray-500 mb-0.5">Puntos</div>
-          <div class="text-xl font-extrabold text-yellow-400">${pts !== null ? pts : '–'}</div></div>
-      </div>`;
-  } else if (!locked) {
-    bottom = `
-      <div class="mt-3 pt-3 border-t border-gray-800">
-        <div class="text-xs text-gray-500 mb-2 text-center">Tu predicción:</div>
-        <div class="flex items-center justify-center gap-2">
-          <span class="text-xs text-gray-400 w-20 text-right truncate">${m.home_team}</span>
-          <input type="number" min="0" max="20" id="ph-${m.id}" value="${pred?.predicted_home ?? ''}" placeholder="0"
-            class="w-11 h-10 bg-gray-800 border border-gray-700 rounded-lg text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
-          <span class="text-gray-500 font-bold">-</span>
-          <input type="number" min="0" max="20" id="pa-${m.id}" value="${pred?.predicted_away ?? ''}" placeholder="0"
-            class="w-11 h-10 bg-gray-800 border border-gray-700 rounded-lg text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
-          <span class="text-xs text-gray-400 w-20 truncate">${m.away_team}</span>
-          <button onclick="submitPred(${m.id})"
-            class="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-2 rounded-lg font-bold transition-colors">
-            ${pred ? '✏️' : '💾'}
-          </button>
-        </div>
-      </div>`;
-  } else if (pred) {
-    bottom = `
-      <div class="mt-3 pt-3 border-t border-gray-800 flex justify-between items-center text-sm">
-        <span class="text-gray-500 text-xs">Tu pick:</span>
-        <span class="font-bold text-yellow-400">${pred.predicted_home} - ${pred.predicted_away}</span>
-        <span class="text-gray-600 text-xs">🔒 Cerrado</span>
-      </div>`;
-  } else {
-    bottom = `<div class="mt-3 pt-3 border-t border-gray-800 text-center text-xs text-gray-600">🔒 Sin predicción · partido cerrado</div>`;
-  }
-
-  return `
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-      <div class="flex justify-between items-center mb-2 text-xs">
-        <span class="text-gray-500">${phaseLbl}</span>
-        ${statusBadge}
-      </div>
-      <div class="flex items-center gap-2">
-        <div class="flex-1 text-right">
-          <div class="font-bold text-sm">${m.home_team}</div>
-        </div>
-        <div class="text-center px-2 min-w-[70px]">
-          ${finished
-            ? `<div class="text-xl font-extrabold text-green-400">${m.home_score} - ${m.away_score}</div>`
-            : `<div class="text-xs text-gray-400">${dateStr}</div><div class="font-bold text-white text-sm">${timeStr}</div>`
-          }
-        </div>
-        <div class="flex-1">
-          <div class="font-bold text-sm">${m.away_team}</div>
-        </div>
-      </div>
-      ${bottom}
+function matchCard(m){
+  const pred=myPreds[m.id],now=new Date(),mDate=new Date(m.match_date);
+  const locked=mDate<=now||m.status!=='SCHEDULED',finished=m.status==='FINISHED';
+  const ok=canPredict(m.phase);
+  const pts=finished&&pred?calcPoints(pred.predicted_home,pred.predicted_away,m.home_score,m.away_score):null;
+  const dateStr=mDate.toLocaleDateString('es-MX',{weekday:'short',month:'short',day:'numeric'});
+  const timeStr=mDate.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const badge={LIVE:'<span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">🔴 EN VIVO</span>',FINISHED:'<span class="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">Finalizado</span>',SCHEDULED:'<span class="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded-full">Pendiente</span>'}[m.status]||'';
+  const lbl=m.phase==='GROUP'?`Grupo ${m.group_name??''} · J${m.matchday??''}`:phaseLabel(m.group_name||m.phase);
+  let bot='';
+  if(finished){
+    const col=pts===5?'text-green-400':pts===3?'text-yellow-400':'text-red-400';
+    bot=`<div class="mt-3 pt-3 border-t border-gray-800 grid grid-cols-3 gap-2 text-center">
+      <div><div class="text-xs text-gray-500 mb-0.5">Resultado</div><div class="font-bold text-white">${m.home_score}-${m.away_score}</div></div>
+      <div><div class="text-xs text-gray-500 mb-0.5">Tu pick</div><div class="font-bold ${pred?col:'text-gray-600'}">${pred?`${pred.predicted_home}-${pred.predicted_away}`:'N/A'}</div></div>
+      <div><div class="text-xs text-gray-500 mb-0.5">Puntos</div><div class="text-xl font-extrabold text-yellow-400">${pts!==null?pts:'–'}</div></div>
     </div>`;
-}
-
-async function submitPred(matchId) {
-  const ph = parseInt(el(`ph-${matchId}`)?.value);
-  const pa = parseInt(el(`pa-${matchId}`)?.value);
-  if (isNaN(ph) || isNaN(pa)) { toast('⚠️ Ingresa los dos marcadores','err'); return; }
-
-  const existing = myPreds[matchId];
-  let error;
-  if (existing) {
-    ({ error } = await db.from('predictions').update({ predicted_home: ph, predicted_away: pa }).eq('id', existing.id));
-    if (!error) myPreds[matchId] = { ...existing, predicted_home: ph, predicted_away: pa };
+  } else if(!locked&&ok){
+    bot=`<div class="mt-3 pt-3 border-t border-gray-800"><div class="text-xs text-gray-500 mb-2 text-center">Tu predicción:</div>
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-xs text-gray-400 w-20 text-right truncate">${m.home_team}</span>
+        <input type="number" min="0" max="20" id="ph-${m.id}" value="${pred?.predicted_home??''}" placeholder="0" class="w-11 h-10 bg-gray-800 border border-gray-700 rounded-lg text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
+        <span class="text-gray-500 font-bold">-</span>
+        <input type="number" min="0" max="20" id="pa-${m.id}" value="${pred?.predicted_away??''}" placeholder="0" class="w-11 h-10 bg-gray-800 border border-gray-700 rounded-lg text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
+        <span class="text-xs text-gray-400 w-20 truncate">${m.away_team}</span>
+        <button onclick="submitPred(${m.id})" class="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-2 rounded-lg font-bold">${pred?'✏️':'💾'}</button>
+      </div></div>`;
+  } else if(!locked&&!ok){
+    bot=`<div class="mt-3 pt-3 border-t border-gray-800 text-center text-xs text-yellow-600">⏳ Pago pendiente de confirmación para predecir</div>`;
+  } else if(pred){
+    bot=`<div class="mt-3 pt-3 border-t border-gray-800 flex justify-between items-center">
+      <span class="text-gray-500 text-xs">Tu pick:</span>
+      <span class="font-bold text-yellow-400">${pred.predicted_home} - ${pred.predicted_away}</span>
+      <span class="text-gray-600 text-xs">🔒 Cerrado</span>
+    </div>`;
   } else {
-    const { data, error: e } = await db.from('predictions')
-      .insert({ user_id: session.user.id, match_id: matchId, predicted_home: ph, predicted_away: pa })
-      .select().single();
-    error = e;
-    if (!error) myPreds[matchId] = data;
+    bot=`<div class="mt-3 pt-3 border-t border-gray-800 text-center text-xs text-gray-600">🔒 Sin predicción</div>`;
   }
-  if (error) { toast('❌ Error al guardar','err'); return; }
-  toast('✅ Predicción guardada');
-  renderMatches();
+  return`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <div class="flex justify-between items-center mb-2 text-xs"><span class="text-gray-500">${lbl}</span>${badge}</div>
+    <div class="flex items-center gap-2">
+      <div class="flex-1 text-right"><div class="font-bold text-sm">${m.home_team}</div></div>
+      <div class="text-center px-2 min-w-[70px]">${finished?`<div class="text-xl font-extrabold text-green-400">${m.home_score}-${m.away_score}</div>`:`<div class="text-xs text-gray-400">${dateStr}</div><div class="font-bold text-white text-sm">${timeStr}</div>`}</div>
+      <div class="flex-1"><div class="font-bold text-sm">${m.away_team}</div></div>
+    </div>${bot}</div>`;
 }
 
-// -----------------------------------------------
+async function submitPred(matchId){
+  const ph=parseInt(el(`ph-${matchId}`)?.value),pa=parseInt(el(`pa-${matchId}`)?.value);
+  if(isNaN(ph)||isNaN(pa)){toast('⚠️ Ingresa los dos marcadores','err');return;}
+  const existing=myPreds[matchId];let error;
+  if(existing){
+    ({error}=await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',existing.id));
+    if(!error)myPreds[matchId]={...existing,predicted_home:ph,predicted_away:pa};
+  } else {
+    const {data,error:e}=await db.from('predictions').insert({user_id:session.user.id,match_id:matchId,predicted_home:ph,predicted_away:pa}).select().single();
+    error=e;if(!error)myPreds[matchId]=data;
+  }
+  if(error){toast('❌ Error al guardar','err');return;}
+  toast('✅ Predicción guardada');renderMatches();
+}
+
 // MIS PICKS
-// -----------------------------------------------
-function renderMyPicks() {
-  const finished = allMatches.filter(m => m.status === 'FINISHED');
-  const pending  = allMatches.filter(m => m.status !== 'FINISHED' && myPreds[m.id]);
-
-  let gPts = 0, kPts = 0, hits = 0, total = 0;
-  finished.forEach(m => {
-    const p = myPreds[m.id];
-    if (!p) return;
-    const pts = calcPoints(p.predicted_home, p.predicted_away, m.home_score, m.away_score);
-    if (m.phase === 'GROUP') gPts += pts; else kPts += pts;
-    total++; if (pts > 0) hits++;
+function renderMyPicks(){
+  const conf=myUserPots.filter(u=>u.confirmed);
+  if(!conf.length){el('mypicks-container').innerHTML=empty('⏳','Tu pago aún no ha sido confirmado.<br><span class="text-xs">Cuando el admin confirme podrás predecir.</span>');return;}
+  const finished=allMatches.filter(m=>m.status==='FINISHED');
+  let gPts=0,kPts=0,hits=0,total=0;
+  finished.forEach(m=>{
+    const p=myPreds[m.id];if(!p)return;
+    const pts=calcPoints(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
+    if(m.phase==='GROUP')gPts+=pts;else kPts+=pts;
+    total++;if(pts>0)hits++;
   });
-
-  let html = `
-    <div class="grid grid-cols-3 gap-2 mb-5">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
-        <div class="text-2xl font-extrabold text-yellow-400">${gPts}</div>
-        <div class="text-xs text-gray-500">Pts Grupos</div>
-      </div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
-        <div class="text-2xl font-extrabold text-purple-400">${kPts}</div>
-        <div class="text-xs text-gray-500">Pts Eliminat.</div>
-      </div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
-        <div class="text-2xl font-extrabold text-green-400">${hits}/${total}</div>
-        <div class="text-xs text-gray-500">Aciertos</div>
-      </div>
-    </div>`;
-
-  if (finished.length) {
-    html += `<p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Resultados</p>
-    <div class="space-y-2 mb-5">`;
-    finished.forEach(m => {
-      const p   = myPreds[m.id];
-      const pts = p ? calcPoints(p.predicted_home, p.predicted_away, m.home_score, m.away_score) : null;
-      const col = pts === 5 ? 'text-green-400' : pts === 3 ? 'text-yellow-400' : 'text-red-400';
-      html += `
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center gap-2">
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-medium truncate">${m.home_team} vs ${m.away_team}</div>
-            <div class="text-xs text-gray-500">${phaseLabel(m.phase)}</div>
-          </div>
-          <div class="text-center text-xs">
-            <div class="text-gray-500">Real</div>
-            <div class="font-bold text-white">${m.home_score}-${m.away_score}</div>
-          </div>
-          <div class="text-center text-xs">
-            <div class="text-gray-500">Pick</div>
-            <div class="font-bold ${p ? col : 'text-gray-600'}">${p ? `${p.predicted_home}-${p.predicted_away}` : 'N/A'}</div>
-          </div>
-          <div class="text-center w-10">
-            <div class="text-xs text-gray-500">Pts</div>
-            <div class="text-xl font-extrabold text-yellow-400">${pts ?? '–'}</div>
-          </div>
-        </div>`;
+  let html=`<div class="grid grid-cols-3 gap-2 mb-5">
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-yellow-400">${gPts}</div><div class="text-xs text-gray-500">Pts Grupos</div></div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-purple-400">${kPts}</div><div class="text-xs text-gray-500">Pts Eliminat.</div></div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-green-400">${hits}/${total}</div><div class="text-xs text-gray-500">Aciertos</div></div>
+  </div>`;
+  if(finished.length){
+    html+=`<p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Historial</p><div class="space-y-2">`;
+    finished.forEach(m=>{
+      const p=myPreds[m.id],pts=p?calcPoints(p.predicted_home,p.predicted_away,m.home_score,m.away_score):null;
+      const col=pts===5?'text-green-400':pts===3?'text-yellow-400':'text-red-400';
+      html+=`<div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center gap-2">
+        <div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${m.home_team} vs ${m.away_team}</div><div class="text-xs text-gray-500">${phaseLabel(m.phase)}</div></div>
+        <div class="text-center text-xs"><div class="text-gray-500">Real</div><div class="font-bold text-white">${m.home_score}-${m.away_score}</div></div>
+        <div class="text-center text-xs"><div class="text-gray-500">Pick</div><div class="font-bold ${p?col:'text-gray-600'}">${p?`${p.predicted_home}-${p.predicted_away}`:'N/A'}</div></div>
+        <div class="text-center w-10"><div class="text-xs text-gray-500">Pts</div><div class="text-xl font-extrabold text-yellow-400">${pts??'–'}</div></div>
+      </div>`;
     });
-    html += '</div>';
-  }
-
-  if (pending.length) {
-    html += `<p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Próximos picks</p>
-    <div class="space-y-2">`;
-    pending.forEach(m => {
-      const p = myPreds[m.id];
-      html += `
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
-          <div class="text-sm font-medium">${m.home_team} vs ${m.away_team}</div>
-          <div class="font-bold text-yellow-400">${p.predicted_home} - ${p.predicted_away}</div>
-        </div>`;
-    });
-    html += '</div>';
-  }
-
-  if (!finished.length && !pending.length) {
-    html += empty('📋','Aún no tienes predicciones<br><span class="text-xs">Ve a "Partidos" para hacer tus picks</span>');
-  }
-
-  el('mypicks-container').innerHTML = html;
+    html+=`</div>`;
+  } else html+=empty('📋','Los resultados aparecerán aquí conforme avance el torneo');
+  el('mypicks-container').innerHTML=html;
 }
 
-// -----------------------------------------------
 // ADMIN
-// -----------------------------------------------
-function renderAdmin() {
-  if (!profile?.is_admin) { el('admin-container').innerHTML = '<p class="text-red-400">Acceso no autorizado</p>'; return; }
+function renderAdmin(){
+  if(!profile?.is_admin){el('admin-container').innerHTML='<p class="text-red-400">Acceso no autorizado</p>';return;}
+  const pending=allMatches.filter(m=>m.status!=='FINISHED').slice(0,15);
+  el('admin-container').innerHTML=`<div class="space-y-4">
 
-  const pending = allMatches.filter(m => m.status !== 'FINISHED').slice(0, 15);
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <h3 class="font-bold mb-3">💰 Montos de Potes</h3>
+      ${allPots.map(pot=>`<div class="flex items-center gap-3 mb-3">
+        <span class="text-sm font-semibold w-36">${pot.name}</span>
+        <input type="number" id="pai-${pot.id}" value="${pot.amount||0}" min="0" class="w-28 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:outline-none"/>
+        <button onclick="savePotAmt('${pot.id}')" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold">Guardar</button>
+      </div>`).join('')}
+    </div>
 
-  el('admin-container').innerHTML = `
-    <div class="space-y-4">
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <h3 class="font-bold mb-3">✅ Confirmar Pagos</h3>
+      <div id="pay-panel">Cargando...</div>
+    </div>
 
-      <!-- Sync -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 class="font-bold mb-1">🌐 Sincronizar Partidos</h3>
-        <p class="text-xs text-gray-400 mb-3">Trae todos los partidos del Mundial desde football-data.org</p>
-        <button onclick="syncMatches()"
-          class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors">
-          🔄 Sincronizar ahora
-        </button>
-      </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <h3 class="font-bold mb-1">📝 Actualizar Resultados</h3>
+      <p class="text-xs text-gray-400 mb-3">Puntos calculados automáticamente</p>
+      ${!pending.length?'<p class="text-gray-500 text-sm">No hay partidos pendientes</p>':`<div class="space-y-3">${pending.map(m=>`
+        <div class="bg-gray-800 rounded-xl p-3">
+          <div class="text-sm font-semibold mb-1">${m.home_team} vs ${m.away_team}</div>
+          <div class="text-xs text-gray-500 mb-2">${new Date(m.match_date).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'})}</div>
+          <div class="flex items-center gap-2">
+            <input type="number" min="0" id="rh-${m.id}" placeholder="Local" class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
+            <span class="text-gray-400">-</span>
+            <input type="number" min="0" id="ra-${m.id}" placeholder="Visit." class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
+            <button onclick="saveResult(${m.id})" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold ml-1">Guardar</button>
+          </div>
+        </div>`).join('')}</div>`}
+    </div>
 
-      <!-- Update Results -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 class="font-bold mb-1">📝 Actualizar Resultados</h3>
-        <p class="text-xs text-gray-400 mb-3">Ingresa el marcador final — los puntos se calculan automáticamente</p>
-        ${pending.length === 0
-          ? '<p class="text-gray-500 text-sm">No hay partidos pendientes</p>'
-          : `<div class="space-y-3">${pending.map(m => `
-            <div class="bg-gray-800 rounded-xl p-3">
-              <div class="text-sm font-semibold mb-1">${m.home_team} vs ${m.away_team}</div>
-              <div class="text-xs text-gray-500 mb-2">${new Date(m.match_date).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'})}</div>
-              <div class="flex items-center gap-2">
-                <input type="number" min="0" id="rh-${m.id}" placeholder="Local"
-                  class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white focus:border-green-500 focus:outline-none text-sm"/>
-                <span class="text-gray-400">-</span>
-                <input type="number" min="0" id="ra-${m.id}" placeholder="Visit."
-                  class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white focus:border-green-500 focus:outline-none text-sm"/>
-                <button onclick="saveResult(${m.id})"
-                  class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition-colors ml-1">
-                  Guardar
-                </button>
-              </div>
-            </div>`).join('')}</div>`
-        }
-      </div>
-
-      <!-- Users -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 class="font-bold mb-3">👥 Participantes</h3>
-        <div id="users-panel">Cargando...</div>
-      </div>
-
-    </div>`;
-
-  loadUsers();
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <h3 class="font-bold mb-2">🌐 Sincronizar API</h3>
+      <button onclick="syncMatches()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold">🔄 Sincronizar</button>
+    </div>
+  </div>`;
+  renderPayPanel();
 }
 
-async function loadUsers() {
-  const { data } = await db.from('profiles').select('*').order('created_at');
-  const panel = el('users-panel');
-  if (!panel) return;
-  panel.innerHTML = (data || []).map(u => `
-    <div class="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
-      <div>
-        <div class="font-medium text-sm">${u.display_name}</div>
-        <div class="text-xs text-gray-500">${u.email}</div>
+function renderPayPanel(){
+  const panel=el('pay-panel');if(!panel)return;
+  const byUser={};
+  allUserPots.forEach(up=>{
+    if(!byUser[up.user_id])byUser[up.user_id]={name:up.profiles?.display_name||'?',email:up.profiles?.email||'',pots:[]};
+    byUser[up.user_id].pots.push(up);
+  });
+  if(!Object.keys(byUser).length){panel.innerHTML='<p class="text-gray-500 text-sm">No hay usuarios inscritos</p>';return;}
+  const lbl={GROUP:'⚽ Grupos',KNOCKOUT:'🏆 Eliminat.',COMPLETE:'🌍 Completa'};
+  panel.innerHTML=`<div class="space-y-3">${Object.entries(byUser).map(([uid,ud])=>`
+    <div class="bg-gray-800 rounded-xl p-3">
+      <div class="font-semibold text-sm mb-2">${ud.name} <span class="text-xs text-gray-500">${ud.email}</span></div>
+      <div class="space-y-1.5">${ud.pots.map(up=>`
+        <div class="flex items-center justify-between">
+          <span class="text-xs ${up.confirmed?'text-green-400':'text-yellow-400'}">${lbl[up.pot_id]||up.pot_id} ${up.confirmed?'✅':'⏳'}</span>
+          <button onclick="${up.confirmed?`revokePayment('${up.user_id}','${up.pot_id}')`:`confirmPayment('${up.user_id}','${up.pot_id}')`}"
+            class="text-xs px-3 py-1 rounded-lg font-bold ${up.confirmed?'bg-red-900 text-red-400 hover:bg-red-800':'bg-green-700 text-white hover:bg-green-600'}">
+            ${up.confirmed?'Revocar':'✅ Confirmar pago'}
+          </button>
+        </div>`).join('')}
       </div>
-      ${u.is_admin ? '<span class="text-xs bg-yellow-900 text-yellow-400 px-2 py-0.5 rounded-full">Admin</span>' : ''}
-    </div>`).join('') || '<p class="text-gray-500 text-sm">No hay usuarios</p>';
+    </div>`).join('')}</div>`;
 }
 
-async function saveResult(matchId) {
-  const h = parseInt(el(`rh-${matchId}`)?.value);
-  const a = parseInt(el(`ra-${matchId}`)?.value);
-  if (isNaN(h) || isNaN(a)) { toast('⚠️ Ingresa ambos marcadores','err'); return; }
-
-  const { error } = await db.from('matches')
-    .update({ home_score: h, away_score: a, status: 'FINISHED' })
-    .eq('id', matchId);
-  if (error) { toast('❌ Error al guardar','err'); return; }
-
-  // Calculate & store points for all predictions of this match
-  const { data: preds } = await db.from('predictions').select('*').eq('match_id', matchId);
-  for (const p of (preds || [])) {
-    const pts = calcPoints(p.predicted_home, p.predicted_away, h, a);
-    await db.from('predictions').update({ points: pts }).eq('id', p.id);
-  }
-
-  toast(`✅ Resultado guardado — puntos calculados`);
-  await loadAll();
-  renderAdmin();
+async function confirmPayment(uid,potId){
+  const {error}=await db.from('user_pots').update({confirmed:true,confirmed_at:new Date().toISOString(),confirmed_by:session.user.id}).eq('user_id',uid).eq('pot_id',potId);
+  if(error){toast('❌ Error','err');return;}
+  toast('✅ Pago confirmado');
+  await loadAllUserPots();renderPayPanel();renderPotes();
 }
-
-async function syncMatches() {
+async function revokePayment(uid,potId){
+  const {error}=await db.from('user_pots').update({confirmed:false,confirmed_at:null,confirmed_by:null}).eq('user_id',uid).eq('pot_id',potId);
+  if(error){toast('❌ Error','err');return;}
+  toast('⚠️ Pago revocado');
+  await loadAllUserPots();renderPayPanel();
+}
+async function savePotAmt(potId){
+  const amt=parseFloat(el(`pai-${potId}`)?.value||0);
+  const {error}=await db.from('pots').update({amount:amt,updated_at:new Date().toISOString()}).eq('id',potId);
+  if(error){toast('❌ Error','err');return;}
+  toast('✅ Monto actualizado');
+  await loadPots();renderPotes();
+}
+async function saveResult(matchId){
+  const h=parseInt(el(`rh-${matchId}`)?.value),a=parseInt(el(`ra-${matchId}`)?.value);
+  if(isNaN(h)||isNaN(a)){toast('⚠️ Ingresa ambos marcadores','err');return;}
+  const {error}=await db.from('matches').update({home_score:h,away_score:a,status:'FINISHED'}).eq('id',matchId);
+  if(error){toast('❌ Error','err');return;}
+  const {data:preds}=await db.from('predictions').select('*').eq('match_id',matchId);
+  for(const p of(preds||[])){await db.from('predictions').update({points:calcPoints(p.predicted_home,p.predicted_away,h,a)}).eq('id',p.id);}
+  toast('✅ Resultado guardado');await loadAll();renderAdmin();
+}
+async function syncMatches(){
   toast('🔄 Sincronizando...');
-  try {
-    const res  = await fetch('/api/football?endpoint=competitions%2FWCQ%2Fmatches');
-    const data = await res.json();
-
-    if (!data.matches?.length) {
-      toast('❌ No se obtuvieron partidos — verifica la API','err');
-      return;
+  try{
+    const res=await fetch('/api/football?endpoint=competitions%2FWCQ%2Fmatches');
+    const data=await res.json();
+    if(!data.matches?.length){toast('❌ Sin datos de API','err');return;}
+    const pm={GROUP_STAGE:'GROUP',ROUND_OF_16:'KNOCKOUT',QUARTER_FINALS:'KNOCKOUT',SEMI_FINALS:'KNOCKOUT',THIRD_PLACE:'KNOCKOUT',FINAL:'KNOCKOUT'};
+    for(const m of data.matches){
+      await db.from('matches').upsert({external_id:String(m.id),match_date:m.utcDate,home_team:m.homeTeam.name,away_team:m.awayTeam.name,home_score:m.score?.fullTime?.home??null,away_score:m.score?.fullTime?.away??null,status:m.status==='FINISHED'?'FINISHED':m.status==='IN_PLAY'?'LIVE':'SCHEDULED',phase:pm[m.stage]||'GROUP',group_name:m.group?.replace('GROUP_','')||null,matchday:m.matchday||1},{onConflict:'external_id'});
     }
-
-    const phaseMap = {
-      GROUP_STAGE:    'GROUP',
-      ROUND_OF_16:   'KNOCKOUT',
-      QUARTER_FINALS:'KNOCKOUT',
-      SEMI_FINALS:   'KNOCKOUT',
-      THIRD_PLACE:   'KNOCKOUT',
-      FINAL:         'KNOCKOUT',
-    };
-
-    for (const m of data.matches) {
-      await db.from('matches').upsert({
-        external_id:  String(m.id),
-        match_date:   m.utcDate,
-        home_team:    m.homeTeam.name,
-        away_team:    m.awayTeam.name,
-        home_score:   m.score?.fullTime?.home ?? null,
-        away_score:   m.score?.fullTime?.away ?? null,
-        status:       m.status === 'FINISHED' ? 'FINISHED' : m.status === 'IN_PLAY' ? 'LIVE' : 'SCHEDULED',
-        phase:        phaseMap[m.stage] || 'GROUP',
-        group_name:   m.group?.replace('GROUP_','') || null,
-        matchday:     m.matchday || 1,
-      }, { onConflict: 'external_id' });
-    }
-
-    toast(`✅ ${data.matches.length} partidos sincronizados`);
-    await loadAll();
-    renderAdmin();
-  } catch (e) {
-    toast('❌ Error de conexión','err');
-    console.error(e);
-  }
+    toast(`✅ ${data.matches.length} partidos sincronizados`);await loadAll();renderAdmin();
+  }catch(e){toast('❌ Error de conexión','err');}
 }
 
-// -----------------------------------------------
 // HELPERS
-// -----------------------------------------------
-function phaseLabel(phase) {
-  return { GROUP:'Fase de Grupos', KNOCKOUT:'Eliminatorias', FINAL:'Final', SEMI_FINAL:'Semifinal' }[phase] || phase;
-}
-function empty(icon, msg) {
-  return `<div class="text-center py-14 text-gray-500"><div class="text-5xl mb-3">${icon}</div><p class="text-sm">${msg}</p></div>`;
-}
-function el(id)         { return document.getElementById(id); }
-function v(id)          { return el(id)?.value?.trim() || ''; }
-function show(id)       { el(id).classList.remove('hidden'); }
-function hide(el)       { el?.classList.add('hidden'); }
-function showEl(el, msg){ el.innerHTML = msg; el.classList.remove('hidden'); }
-
-function toast(msg, type='ok') {
-  const t = el('toast');
-  t.textContent = msg;
-  t.className = `fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-50 ${type==='err' ? 'bg-red-600' : 'bg-green-600'}`;
+function phaseLabel(p){return{GROUP:'Fase Grupos',KNOCKOUT:'Eliminatorias',FINAL:'Final',SF:'Semifinal',QF:'Cuartos',R32:'Ronda de 32',R16:'Octavos','3PL':'3er Lugar'}[p]||p||'';}
+function empty(i,m){return`<div class="text-center py-14 text-gray-500"><div class="text-5xl mb-3">${i}</div><p class="text-sm">${m}</p></div>`;}
+function el(id){return document.getElementById(id);}
+function v(id){return el(id)?.value?.trim()||'';}
+function show(id){el(id).classList.remove('hidden');}
+function hide(el){el?.classList.add('hidden');}
+function showEl(el,msg){el.innerHTML=msg;el.classList.remove('hidden');}
+function showLoginForm(){el('form-login').classList.remove('hidden');el('form-register').classList.add('hidden');}
+function showRegisterForm(){el('form-register').classList.remove('hidden');el('form-login').classList.add('hidden');}
+function toast(msg,type='ok'){
+  const t=el('toast');
+  t.textContent=msg;
+  t.className=`fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-50 ${type==='err'?'bg-red-600':'bg-green-600'}`;
   t.classList.remove('hidden');
   clearTimeout(t._tid);
-  t._tid = setTimeout(() => t.classList.add('hidden'), 3000);
+  t._tid=setTimeout(()=>t.classList.add('hidden'),3000);
 }
-
-function showLoginForm()    { el('form-login').classList.remove('hidden'); el('form-register').classList.add('hidden'); }
-function showRegisterForm() { el('form-register').classList.remove('hidden'); el('form-login').classList.add('hidden'); }
 </script>
 </body>
 </html>
