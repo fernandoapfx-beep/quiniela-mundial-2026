@@ -287,7 +287,7 @@ async function loadAllPreds(){
   allPreds=data||[];
 }
 async function loadUserPots(){
-  const {data,error}=await db.from('user_pots').select('*,profiles(display_name,email)');
+  const {data,error}=await db.from('user_pots').select('*,profiles!user_pots_user_id_fkey(display_name,email)');
   if(error){ console.error('user_pots error:',error); allUserPots=[];myUserPots=[];return; }
   allUserPots=data||[];
   myUserPots=allUserPots.filter(u=>u.user_id===session?.user?.id);
