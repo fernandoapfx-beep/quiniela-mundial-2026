@@ -7,22 +7,32 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
+    /* ── CRÍTICO: pantallas como capas, nunca apiladas ── */
+    #screen-auth, #screen-app {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      overflow-y: auto; background: #030712;
+      transition: opacity 0.2s;
+    }
+    #screen-auth { z-index: 100; }
+    #screen-app  { z-index: 10;  }
+    .screen-hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+
     .tab-active { border-bottom: 3px solid #22c55e; color: #22c55e !important; }
     .fade-in { animation: fadeIn 0.25s ease-out; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    input[type=number] { -moz-appearance: textfield; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    input[type=number]{-moz-appearance:textfield}
     input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin:0; }
-    .pot-card { transition: all 0.2s; }
-    .pot-card.selected { border-color: #22c55e !important; background: rgba(34,197,94,0.08); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .pot-card{transition:all .2s}
+    .pot-card.selected{border-color:#22c55e!important;background:rgba(34,197,94,.08)}
+    .no-scrollbar::-webkit-scrollbar{display:none}
+    .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
   </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen">
+<body class="bg-gray-950 text-gray-100">
 
-<!-- ===================== AUTH ===================== -->
-<div id="screen-auth" class="min-h-screen flex items-center justify-center p-4">
+<!-- ══════════════ AUTH ══════════════ -->
+<div id="screen-auth" class="flex items-center justify-center p-4">
   <div class="w-full max-w-md">
     <div class="text-center mb-8">
       <div class="text-7xl mb-3">⚽</div>
@@ -39,13 +49,14 @@
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
         <input id="login-password" type="password" placeholder="Contraseña"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
-        <button onclick="doLogin()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
+        <button onclick="doLogin()"
+          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
           Entrar ⚽
         </button>
         <div id="login-error" class="text-red-400 text-sm text-center hidden"></div>
       </div>
       <p class="text-center text-gray-500 text-sm mt-4">
-        ¿Primera vez? <button onclick="showRegisterForm()" class="text-green-400 hover:underline ml-1">Crear cuenta</button>
+        ¿Primera vez? <button onclick="showReg()" class="text-green-400 hover:underline ml-1">Crear cuenta</button>
       </p>
     </div>
 
@@ -53,72 +64,66 @@
     <div id="form-register" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
       <h2 class="text-xl font-bold mb-5 text-center">Crear Cuenta</h2>
       <div class="space-y-3">
-        <input id="reg-name" type="text" placeholder="Tu apodo (ej: El Crack)"
+        <input id="reg-name"     type="text"     placeholder="Tu apodo (ej: El Crack)"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
-        <input id="reg-email" type="email" placeholder="Correo electrónico"
+        <input id="reg-email"    type="email"    placeholder="Correo electrónico"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
         <input id="reg-password" type="password" placeholder="Contraseña (mín. 6 caracteres)"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
-        <input id="reg-code" type="text" placeholder="Código de invitación"
+        <input id="reg-code"     type="text"     placeholder="Código de invitación"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
 
         <div class="pt-1">
           <p class="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-widest">¿En qué pote(s) quieres jugar?</p>
           <div class="space-y-2">
-            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('GROUP')" id="pot-card-GROUP">
+            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('GROUP')" id="pc-GROUP">
               <div class="flex items-center gap-3">
-                <div id="pot-check-GROUP" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
+                <div id="ck-GROUP" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
                   <svg class="hidden w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                 </div>
-                <div class="flex-1">
-                  <div class="font-bold text-sm">⚽ Fase de Grupos</div>
-                  <div class="text-xs text-gray-400">72 partidos · Grupos A–L</div>
-                </div>
-                <div id="reg-amt-GROUP" class="text-yellow-400 font-bold text-sm"></div>
+                <div class="flex-1"><div class="font-bold text-sm">⚽ Fase de Grupos</div><div class="text-xs text-gray-400">72 partidos · Grupos A–L</div></div>
+                <div id="ra-GROUP" class="text-yellow-400 font-bold text-sm"></div>
               </div>
             </div>
-            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('KNOCKOUT')" id="pot-card-KNOCKOUT">
+            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('KNOCKOUT')" id="pc-KNOCKOUT">
               <div class="flex items-center gap-3">
-                <div id="pot-check-KNOCKOUT" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
+                <div id="ck-KNOCKOUT" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
                   <svg class="hidden w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                 </div>
-                <div class="flex-1">
-                  <div class="font-bold text-sm">🏆 Fase Eliminatoria</div>
-                  <div class="text-xs text-gray-400">32 partidos · R32 hasta Final</div>
-                </div>
-                <div id="reg-amt-KNOCKOUT" class="text-yellow-400 font-bold text-sm"></div>
+                <div class="flex-1"><div class="font-bold text-sm">🏆 Fase Eliminatoria</div><div class="text-xs text-gray-400">32 partidos · R32 hasta Final</div></div>
+                <div id="ra-KNOCKOUT" class="text-yellow-400 font-bold text-sm"></div>
               </div>
             </div>
-            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('COMPLETE')" id="pot-card-COMPLETE">
+            <div class="pot-card border border-gray-700 rounded-xl p-3 cursor-pointer" onclick="togglePot('COMPLETE')" id="pc-COMPLETE">
               <div class="flex items-center gap-3">
-                <div id="pot-check-COMPLETE" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
+                <div id="ck-COMPLETE" class="w-5 h-5 rounded border-2 border-gray-600 flex items-center justify-center flex-shrink-0">
                   <svg class="hidden w-3 h-3 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                 </div>
-                <div class="flex-1">
-                  <div class="font-bold text-sm">🌍 Quiniela Completa</div>
-                  <div class="text-xs text-gray-400">104 partidos · Todo el torneo</div>
-                </div>
-                <div id="reg-amt-COMPLETE" class="text-yellow-400 font-bold text-sm"></div>
+                <div class="flex-1"><div class="font-bold text-sm">🌍 Quiniela Completa</div><div class="text-xs text-gray-400">104 partidos · Todo el torneo</div></div>
+                <div id="ra-COMPLETE" class="text-yellow-400 font-bold text-sm"></div>
               </div>
             </div>
           </div>
         </div>
 
-        <button onclick="doRegister()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
+        <button onclick="doRegister()"
+          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
           Unirse 🎯
         </button>
         <div id="reg-error"   class="text-red-400 text-sm text-center hidden"></div>
         <div id="reg-success" class="text-green-400 text-sm text-center hidden"></div>
       </div>
       <p class="text-center text-gray-500 text-sm mt-4">
-        ¿Ya tienes cuenta? <button onclick="showLoginForm()" class="text-green-400 hover:underline ml-1">Inicia sesión</button>
+        ¿Ya tienes cuenta? <button onclick="showLogin()" class="text-green-400 hover:underline ml-1">Inicia sesión</button>
       </p>
     </div>
   </div>
 </div>
 
-<!-- ===================== APP ===================== -->
-<div id="screen-app" class="hidden min-h-screen flex flex-col">
+<!-- ══════════════ APP ══════════════ -->
+<div id="screen-app" class="screen-hidden flex flex-col min-h-full">
+
+  <!-- Header -->
   <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -128,7 +133,10 @@
           <p id="greeting" class="text-xs text-green-400 leading-tight"></p>
         </div>
       </div>
-      <button onclick="doLogout()" class="text-xs text-gray-400 hover:text-red-400 border border-gray-700 px-3 py-1.5 rounded-lg">Salir</button>
+      <button id="btn-salir" onclick="doLogout()"
+        class="text-xs text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors">
+        Salir 🚪
+      </button>
     </div>
     <div class="max-w-3xl mx-auto flex overflow-x-auto no-scrollbar border-t border-gray-800">
       <button onclick="goTab('potes')"    id="tb-potes"    class="tab-btn tab-active flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">💰 Potes</button>
@@ -151,9 +159,9 @@
     </div>
     <div id="tab-partidos" class="tab-panel hidden fade-in">
       <div class="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
-        <button onclick="setMatchPhase('ALL')"      id="mp-ALL"      class="mp-btn bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Todos</button>
-        <button onclick="setMatchPhase('GROUP')"    id="mp-GROUP"    class="mp-btn bg-gray-800 text-gray-400 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Grupos</button>
-        <button onclick="setMatchPhase('KNOCKOUT')" id="mp-KNOCKOUT" class="mp-btn bg-gray-800 text-gray-400 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Eliminatorias</button>
+        <button onclick="setMPhase('ALL')"      id="mp-ALL"      class="mp-btn bg-green-600 text-white px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Todos</button>
+        <button onclick="setMPhase('GROUP')"    id="mp-GROUP"    class="mp-btn bg-gray-800 text-gray-400 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Grupos</button>
+        <button onclick="setMPhase('KNOCKOUT')" id="mp-KNOCKOUT" class="mp-btn bg-gray-800 text-gray-400 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap">Eliminatorias</button>
       </div>
       <div id="matches-list"></div>
     </div>
@@ -162,109 +170,164 @@
   </main>
 </div>
 
-<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-50 hidden"></div>
+<!-- Toast -->
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-[999] opacity-0 transition-opacity pointer-events-none"></div>
 
 <script>
+// ── CONFIG ──────────────────────────────────────
 const SUPABASE_URL = 'https://qxebgqqyyvknmlmqebgq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FVmzGuPA45n9qyET5IR3Dg_oRkNgxpg';
 const INVITE_CODE  = 'MUNDIAL2026';
 const {createClient} = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let session=null,profile=null,allMatches=[],myPreds={},allPreds=[],allPots=[],myUserPots=[],allUserPots=[];
-let selectedPots={GROUP:false,KNOCKOUT:false,COMPLETE:false};
-let lbPot='GROUP',matchPhase='ALL';
+// ── STATE ────────────────────────────────────────
+let session=null, profile=null;
+let allMatches=[], myPreds={}, allPreds=[];
+let allPots=[], myUserPots=[], allUserPots=[];
+let selPots={GROUP:false,KNOCKOUT:false,COMPLETE:false};
+let lbPot='GROUP', mPhase='ALL';
 
+// ── SCREEN CONTROL ───────────────────────────────
+function showAuth(){
+  el('screen-auth').classList.remove('screen-hidden');
+  el('screen-app').classList.add('screen-hidden');
+}
+function showApp(){
+  el('screen-auth').classList.add('screen-hidden');
+  el('screen-app').classList.remove('screen-hidden');
+}
+
+// ── BOOT ─────────────────────────────────────────
 (async()=>{
-  await loadPots(); renderRegisterAmounts();
-  const {data}=await db.auth.getSession();
-  if(data.session){session=data.session;await boot();}
-  else show('screen-auth');
+  showAuth();
+  await loadPots();
+  renderRegAmounts();
+  const {data} = await db.auth.getSession();
+  if(data.session){ session=data.session; await boot(); }
+
   db.auth.onAuthStateChange(async(evt,s)=>{
-    if(evt==='SIGNED_IN'&&s){session=s;await boot();}
-    if(evt==='SIGNED_OUT'){session=profile=null;showLoginForm();show('screen-auth');}
+    if(evt==='SIGNED_IN'&&s){ session=s; await boot(); }
+    if(evt==='SIGNED_OUT'){
+      session=profile=null;
+      allMatches=[];myPreds={};allPreds=[];
+      allPots=[];myUserPots=[];allUserPots=[];
+      showLogin();
+      showAuth();
+    }
   });
 })();
 
 async function boot(){
   await loadProfile();
-  await Promise.all([loadPots(),loadMatches(),loadMyPreds(),loadAllPreds(),loadAllUserPots()]);
+  await Promise.all([loadPots(),loadMatches(),loadMyPreds(),loadAllPreds(),loadUserPots()]);
   renderApp();
 }
 
-// AUTH
+// ── AUTH ─────────────────────────────────────────
 async function doLogin(){
-  const email=v('login-email'),password=v('login-password'),errEl=el('login-error');
-  hide(errEl);
-  if(!email||!password){showEl(errEl,'Completa todos los campos');return;}
-  const {error}=await db.auth.signInWithPassword({email,password});
-  if(error) showEl(errEl,'Correo o contraseña incorrectos');
+  const email=v('login-email'),pw=v('login-password'),err=el('login-error');
+  hide(err);
+  if(!email||!pw){showEl(err,'Completa todos los campos');return;}
+  const btn=event.target; btn.disabled=true; btn.textContent='Entrando...';
+  const {error}=await db.auth.signInWithPassword({email,password:pw});
+  btn.disabled=false; btn.textContent='Entrar ⚽';
+  if(error) showEl(err,'Correo o contraseña incorrectos');
 }
+
 async function doRegister(){
-  const name=v('reg-name'),email=v('reg-email'),password=v('reg-password'),code=v('reg-code').toUpperCase();
-  const errEl=el('reg-error'),sucEl=el('reg-success');
-  hide(errEl);hide(sucEl);
-  if(!name||!email||!password||!code){showEl(errEl,'Completa todos los campos');return;}
-  if(code!==INVITE_CODE){showEl(errEl,'Código de invitación incorrecto');return;}
-  if(password.length<6){showEl(errEl,'Contraseña mínimo 6 caracteres');return;}
-  const chosen=Object.entries(selectedPots).filter(([,v])=>v).map(([k])=>k);
-  if(!chosen.length){showEl(errEl,'Selecciona al menos un pote');return;}
-  const {data,error}=await db.auth.signUp({email,password,options:{data:{display_name:name}}});
-  if(error){showEl(errEl,error.message);return;}
+  const name=v('reg-name'),email=v('reg-email'),pw=v('reg-password'),code=v('reg-code').toUpperCase();
+  const err=el('reg-error'),suc=el('reg-success');
+  hide(err);hide(suc);
+  if(!name||!email||!pw||!code){showEl(err,'Completa todos los campos');return;}
+  if(code!==INVITE_CODE){showEl(err,'Código de invitación incorrecto');return;}
+  if(pw.length<6){showEl(err,'Contraseña mínimo 6 caracteres');return;}
+  const chosen=Object.entries(selPots).filter(([,v])=>v).map(([k])=>k);
+  if(!chosen.length){showEl(err,'Selecciona al menos un pote');return;}
+  const {data,error}=await db.auth.signUp({email,password:pw,options:{data:{display_name:name}}});
+  if(error){showEl(err,error.message);return;}
   if(data.user){
-    for(const potId of chosen){
-      await db.from('user_pots').insert({user_id:data.user.id,pot_id:potId,confirmed:false});
+    for(const p of chosen){
+      await db.from('user_pots').insert({user_id:data.user.id,pot_id:p,confirmed:false});
     }
   }
-  showEl(sucEl,'✅ Cuenta creada. Ya puedes iniciar sesión.');
+  showEl(suc,'✅ Cuenta creada. Ya puedes iniciar sesión.');
 }
-async function doLogout(){await db.auth.signOut();}
 
-// DATA
-async function loadProfile(){const {data}=await db.from('profiles').select('*').eq('id',session.user.id).single();profile=data;}
-async function loadPots(){const {data}=await db.from('pots').select('*').order('id');allPots=data||[];}
-async function loadMatches(){const {data}=await db.from('matches').select('*').order('match_date',{ascending:true});allMatches=data||[];}
-async function loadMyPreds(){const {data}=await db.from('predictions').select('*').eq('user_id',session.user.id);myPreds={};(data||[]).forEach(p=>{myPreds[p.match_id]=p;});}
-async function loadAllPreds(){const {data}=await db.from('predictions').select('*, profiles(display_name)');allPreds=data||[];}
-async function loadAllUserPots(){
-  const {data}=await db.from('user_pots').select('*, profiles(display_name, email)');
+async function doLogout(){
+  const btn=el('btn-salir');
+  btn.disabled=true; btn.textContent='Saliendo...';
+  const {error}=await db.auth.signOut();
+  if(error){ btn.disabled=false; btn.textContent='Salir 🚪'; toast('❌ Error al salir','err'); return; }
+  // Forzar si onAuthStateChange no dispara
+  session=profile=null;
+  showLogin(); showAuth();
+  btn.disabled=false; btn.textContent='Salir 🚪';
+}
+
+// ── DATA ─────────────────────────────────────────
+async function loadProfile(){
+  const {data}=await db.from('profiles').select('*').eq('id',session.user.id).single();
+  profile=data;
+}
+async function loadPots(){
+  const {data}=await db.from('pots').select('*').order('id');
+  allPots=data||[];
+}
+async function loadMatches(){
+  const {data}=await db.from('matches').select('*').order('match_date',{ascending:true});
+  allMatches=data||[];
+}
+async function loadMyPreds(){
+  const {data}=await db.from('predictions').select('*').eq('user_id',session.user.id);
+  myPreds={};(data||[]).forEach(p=>{myPreds[p.match_id]=p;});
+}
+async function loadAllPreds(){
+  const {data}=await db.from('predictions').select('*,profiles(display_name)');
+  allPreds=data||[];
+}
+async function loadUserPots(){
+  const {data,error}=await db.from('user_pots').select('*,profiles(display_name,email)');
+  if(error){ console.error('user_pots error:',error); allUserPots=[];myUserPots=[];return; }
   allUserPots=data||[];
-  myUserPots=(data||[]).filter(u=>u.user_id===session?.user?.id);
+  myUserPots=allUserPots.filter(u=>u.user_id===session?.user?.id);
 }
-async function loadAll(){await Promise.all([loadMatches(),loadMyPreds(),loadAllPreds(),loadAllUserPots()]);}
+async function loadAll(){
+  await Promise.all([loadMatches(),loadMyPreds(),loadAllPreds(),loadUserPots()]);
+}
 
-// POINTS
-function calcPoints(ph,pa,ah,aa){
+// ── POINTS ───────────────────────────────────────
+function calcPts(ph,pa,ah,aa){
   if(ah===null||aa===null)return null;
   if(ph===ah&&pa===aa)return 5;
   const pr=ph>pa?'H':ph<pa?'A':'D',ar=ah>aa?'H':ah<aa?'A':'D';
   return pr===ar?3:0;
 }
 
-// RENDER APP
+// ── RENDER APP ───────────────────────────────────
 function renderApp(){
-  show('screen-app');
+  showApp();
   el('greeting').textContent=`Hola, ${profile?.display_name||''}!`;
-  if(profile?.is_admin)el('tb-admin').classList.remove('hidden');
+  if(profile?.is_admin) el('tb-admin').classList.remove('hidden');
   goTab('potes');
 }
 
-// TABS
+// ── TABS ─────────────────────────────────────────
 function goTab(tab){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
   document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('tab-active');b.classList.add('text-gray-400');});
   el(`tab-${tab}`).classList.remove('hidden');
   el(`tb-${tab}`).classList.add('tab-active');
   el(`tb-${tab}`).classList.remove('text-gray-400');
-  if(tab==='potes')renderPotes();
-  if(tab==='tabla')renderLeaderboard();
-  if(tab==='partidos')renderMatches();
-  if(tab==='mispicks')renderMyPicks();
-  if(tab==='admin')renderAdmin();
+  if(tab==='potes')    renderPotes();
+  if(tab==='tabla')    renderLb();
+  if(tab==='partidos') renderMatches();
+  if(tab==='mispicks') renderMyPicks();
+  if(tab==='admin')    renderAdmin();
 }
 
-// POTES TAB
-function fmtMoney(a){return(!a||a===0)?'Por definir':'$'+Number(a).toLocaleString('es-MX');}
+// ── POTES TAB ────────────────────────────────────
+function fmt(a){return(!a||a===0)?'Por definir':'$'+Number(a).toLocaleString('es-MX');}
 
 function renderPotes(){
   const defs=[
@@ -275,168 +338,139 @@ function renderPotes(){
   let html=`<h2 class="text-lg font-bold mb-4">💰 Potes del Torneo</h2><div class="space-y-4">`;
   for(const pd of defs){
     const pot=allPots.find(p=>p.id===pd.id)||{};
-    const confirmed=allUserPots.filter(u=>u.pot_id===pd.id&&u.confirmed);
-    const pending=allUserPots.filter(u=>u.pot_id===pd.id&&!u.confirmed);
-    const myEnroll=myUserPots.find(u=>u.pot_id===pd.id);
-    const isConfirmed=myEnroll?.confirmed;
-    const isPending=myEnroll&&!myEnroll.confirmed;
-    const total=(pot.amount||0)*confirmed.length;
-    html+=`
-      <div class="bg-gray-900 border ${isConfirmed?'border-green-600':isPending?'border-yellow-600':'border-gray-800'} rounded-2xl overflow-hidden">
-        <div class="p-4">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="text-2xl mb-1">${pd.emoji}</div>
-              <h3 class="font-extrabold text-lg">${pd.name}</h3>
-              <p class="text-xs text-gray-400">${pd.desc}</p>
-            </div>
-            <div class="text-right">
-              <div class="text-3xl font-extrabold text-yellow-400">${fmtMoney(pot.amount)}</div>
-              <div class="text-xs text-gray-500">por participante</div>
-            </div>
-          </div>
-          <div class="grid grid-cols-3 gap-2 mb-3">
-            <div class="bg-gray-800 rounded-xl p-2.5 text-center">
-              <div class="text-xl font-extrabold text-green-400">${confirmed.length}</div>
-              <div class="text-xs text-gray-400">Confirmados</div>
-            </div>
-            <div class="bg-gray-800 rounded-xl p-2.5 text-center">
-              <div class="text-xl font-extrabold text-yellow-400">${pending.length}</div>
-              <div class="text-xs text-gray-400">Pendientes</div>
-            </div>
-            <div class="bg-gray-800 rounded-xl p-2.5 text-center">
-              <div class="text-xl font-extrabold text-purple-400">${fmtMoney(total)}</div>
-              <div class="text-xs text-gray-400">Pote total</div>
-            </div>
-          </div>
-          ${myEnroll
-            ?`<div class="rounded-xl p-3 text-center text-sm font-semibold ${isConfirmed?'bg-green-900/40 text-green-400':'bg-yellow-900/40 text-yellow-400'}">
-                ${isConfirmed?'✅ Confirmado — estás jugando este pote':'⏳ Inscrito — pendiente de confirmación de pago'}
-              </div>`
-            :`<div class="rounded-xl p-3 text-center text-sm text-gray-500 bg-gray-800">No estás inscrito en este pote</div>`
-          }
+    const conf=allUserPots.filter(u=>u.pot_id===pd.id&&u.confirmed);
+    const pend=allUserPots.filter(u=>u.pot_id===pd.id&&!u.confirmed);
+    const mine=myUserPots.find(u=>u.pot_id===pd.id);
+    const isConf=mine?.confirmed, isPend=mine&&!mine.confirmed;
+    const total=(pot.amount||0)*conf.length;
+    html+=`<div class="bg-gray-900 border ${isConf?'border-green-600':isPend?'border-yellow-600':'border-gray-800'} rounded-2xl overflow-hidden">
+      <div class="p-4">
+        <div class="flex items-start justify-between mb-3">
+          <div><div class="text-2xl mb-1">${pd.emoji}</div><h3 class="font-extrabold text-lg">${pd.name}</h3><p class="text-xs text-gray-400">${pd.desc}</p></div>
+          <div class="text-right"><div class="text-3xl font-extrabold text-yellow-400">${fmt(pot.amount)}</div><div class="text-xs text-gray-500">por participante</div></div>
         </div>
-        ${confirmed.length?`
-          <div class="border-t border-gray-800 px-4 py-3">
-            <p class="text-xs text-gray-500 mb-2 font-semibold">JUGADORES CONFIRMADOS</p>
-            <div class="flex flex-wrap gap-2">
-              ${confirmed.map(u=>`<span class="bg-gray-800 text-xs px-2.5 py-1 rounded-full text-gray-300">${u.profiles?.display_name||'Jugador'}</span>`).join('')}
-            </div>
-          </div>`:''}
-      </div>`;
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div class="bg-gray-800 rounded-xl p-2.5 text-center"><div class="text-xl font-extrabold text-green-400">${conf.length}</div><div class="text-xs text-gray-400">Confirmados</div></div>
+          <div class="bg-gray-800 rounded-xl p-2.5 text-center"><div class="text-xl font-extrabold text-yellow-400">${pend.length}</div><div class="text-xs text-gray-400">Pendientes</div></div>
+          <div class="bg-gray-800 rounded-xl p-2.5 text-center"><div class="text-xl font-extrabold text-purple-400">${fmt(total)}</div><div class="text-xs text-gray-400">Pote total</div></div>
+        </div>
+        ${mine
+          ?`<div class="rounded-xl p-3 text-center text-sm font-semibold ${isConf?'bg-green-900/40 text-green-400':'bg-yellow-900/40 text-yellow-400'}">
+              ${isConf?'✅ Confirmado — estás jugando este pote':'⏳ Inscrito — pendiente de confirmación de pago'}
+            </div>`
+          :`<div class="rounded-xl p-3 text-center text-sm text-gray-500 bg-gray-800">No estás inscrito en este pote</div>`
+        }
+      </div>
+      ${conf.length?`<div class="border-t border-gray-800 px-4 py-3">
+        <p class="text-xs text-gray-500 mb-2 font-semibold">JUGADORES CONFIRMADOS</p>
+        <div class="flex flex-wrap gap-2">${conf.map(u=>`<span class="bg-gray-800 text-xs px-2.5 py-1 rounded-full text-gray-300">${u.profiles?.display_name||'Jugador'}</span>`).join('')}</div>
+      </div>`:''}
+    </div>`;
   }
   html+=`</div>`;
   el('potes-container').innerHTML=html;
 }
 
-function renderRegisterAmounts(){
+function renderRegAmounts(){
   ['GROUP','KNOCKOUT','COMPLETE'].forEach(id=>{
     const pot=allPots.find(p=>p.id===id);
-    const el2=el(`reg-amt-${id}`);
-    if(el2&&pot?.amount>0)el2.textContent=fmtMoney(pot.amount);
+    const e=el(`ra-${id}`);
+    if(e&&pot?.amount>0) e.textContent=fmt(pot.amount);
   });
 }
 
-// POT SELECTOR
-function togglePot(potId){
-  selectedPots[potId]=!selectedPots[potId];
-  const card=el(`pot-card-${potId}`),chk=el(`pot-check-${potId}`);
-  if(selectedPots[potId]){card.classList.add('selected');chk.querySelector('svg').classList.remove('hidden');chk.classList.add('border-green-500');}
+function togglePot(id){
+  selPots[id]=!selPots[id];
+  const card=el(`pc-${id}`),chk=el(`ck-${id}`);
+  if(selPots[id]){card.classList.add('selected');chk.querySelector('svg').classList.remove('hidden');chk.classList.add('border-green-500');}
   else{card.classList.remove('selected');chk.querySelector('svg').classList.add('hidden');chk.classList.remove('border-green-500');}
 }
 
-// LEADERBOARD
+// ── LEADERBOARD ──────────────────────────────────
 function setLbPot(pot){
   lbPot=pot;
   document.querySelectorAll('.lbp-btn').forEach(b=>{b.classList.remove('bg-green-600','text-white');b.classList.add('bg-gray-800','text-gray-400');});
   el(`lbp-${pot}`).classList.add('bg-green-600','text-white');
   el(`lbp-${pot}`).classList.remove('bg-gray-800','text-gray-400');
-  renderLeaderboard();
+  renderLb();
 }
 
-function renderLeaderboard(){
-  const confirmedIds=allUserPots.filter(u=>u.pot_id===lbPot&&u.confirmed).map(u=>u.user_id);
-  if(!confirmedIds.length){el('leaderboard').innerHTML=empty('📊','Aún no hay participantes confirmados en este pote');return;}
+function renderLb(){
+  const ids=allUserPots.filter(u=>u.pot_id===lbPot&&u.confirmed).map(u=>u.user_id);
+  if(!ids.length){el('leaderboard').innerHTML=empty('📊','Aún no hay participantes confirmados en este pote');return;}
   const phases=lbPot==='GROUP'?['GROUP']:lbPot==='KNOCKOUT'?['KNOCKOUT']:['GROUP','KNOCKOUT'];
   const done=allMatches.filter(m=>phases.includes(m.phase)&&m.status==='FINISHED');
   const users={};
-  confirmedIds.forEach(uid=>{
+  ids.forEach(uid=>{
     const up=allUserPots.find(u=>u.user_id===uid&&u.pot_id===lbPot);
     users[uid]={name:up?.profiles?.display_name||'Jugador',pts:0,hits:0,total:0};
   });
   done.forEach(m=>{
-    allPreds.filter(p=>p.match_id===m.id&&confirmedIds.includes(p.user_id)).forEach(p=>{
+    allPreds.filter(p=>p.match_id===m.id&&ids.includes(p.user_id)).forEach(p=>{
       if(!users[p.user_id])return;
-      const pts=calcPoints(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
+      const pts=calcPts(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
       if(pts!==null){users[p.user_id].pts+=pts;users[p.user_id].total++;if(pts>0)users[p.user_id].hits++;}
     });
   });
   const sorted=Object.entries(users).sort((a,b)=>b[1].pts-a[1].pts);
   const medals=['🥇','🥈','🥉'];
   const pot=allPots.find(p=>p.id===lbPot)||{};
-  const totalPot=(pot.amount||0)*confirmedIds.length;
+  const totalPot=(pot.amount||0)*ids.length;
   el('leaderboard').innerHTML=`
     ${pot.amount>0?`<div class="bg-yellow-900/30 border border-yellow-700 rounded-xl p-3 mb-4 flex justify-between items-center">
       <span class="text-yellow-400 font-bold">${pot.name}</span>
-      <span class="text-2xl font-extrabold text-yellow-400">${fmtMoney(totalPot)}</span>
+      <span class="text-2xl font-extrabold text-yellow-400">${fmt(totalPot)}</span>
     </div>`:''}
-    <div class="space-y-2">
-    ${sorted.map(([uid,d],i)=>{
-      const isMe=uid===session?.user?.id;
-      return`<div class="bg-gray-900 border ${isMe?'border-green-500':'border-gray-800'} rounded-xl p-4 flex items-center gap-3">
+    <div class="space-y-2">${sorted.map(([uid,d],i)=>{
+      const me=uid===session?.user?.id;
+      return`<div class="bg-gray-900 border ${me?'border-green-500':'border-gray-800'} rounded-xl p-4 flex items-center gap-3">
         <div class="text-2xl w-8 text-center">${medals[i]??i+1}</div>
-        <div class="flex-1 min-w-0">
-          <div class="font-bold truncate ${isMe?'text-green-400':'text-white'}">${d.name}${isMe?' <span class="text-xs font-normal">(Tú)</span>':''}</div>
-          <div class="text-xs text-gray-500">${d.hits}/${d.total} aciertos</div>
-        </div>
-        <div class="text-right">
-          <div class="text-2xl font-extrabold text-yellow-400">${d.pts}</div>
-          <div class="text-xs text-gray-500">pts</div>
-        </div>
+        <div class="flex-1 min-w-0"><div class="font-bold truncate ${me?'text-green-400':'text-white'}">${d.name}${me?' <span class="text-xs">(Tú)</span>':''}</div>
+        <div class="text-xs text-gray-500">${d.hits}/${d.total} aciertos</div></div>
+        <div class="text-right"><div class="text-2xl font-extrabold text-yellow-400">${d.pts}</div><div class="text-xs text-gray-500">pts</div></div>
       </div>`;
-    }).join('')}
-    </div>`;
+    }).join('')}</div>`;
 }
 
-// MATCHES
-function canPredict(phase){
+// ── MATCHES ──────────────────────────────────────
+function canPred(phase){
   if(phase==='GROUP')    return myUserPots.some(u=>u.confirmed&&(u.pot_id==='GROUP'||u.pot_id==='COMPLETE'));
   if(phase==='KNOCKOUT') return myUserPots.some(u=>u.confirmed&&(u.pot_id==='KNOCKOUT'||u.pot_id==='COMPLETE'));
   return false;
 }
 
-function setMatchPhase(phase){
-  matchPhase=phase;
+function setMPhase(p){
+  mPhase=p;
   document.querySelectorAll('.mp-btn').forEach(b=>{b.classList.remove('bg-green-600','text-white');b.classList.add('bg-gray-800','text-gray-400');});
-  el(`mp-${phase}`).classList.add('bg-green-600','text-white');
-  el(`mp-${phase}`).classList.remove('bg-gray-800','text-gray-400');
+  el(`mp-${p}`).classList.add('bg-green-600','text-white');
+  el(`mp-${p}`).classList.remove('bg-gray-800','text-gray-400');
   renderMatches();
 }
 
 function renderMatches(){
-  const list=matchPhase==='ALL'?allMatches:allMatches.filter(m=>m.phase===matchPhase);
+  const list=mPhase==='ALL'?allMatches:allMatches.filter(m=>m.phase===mPhase);
   if(!list.length){el('matches-list').innerHTML=empty('⚽','No hay partidos cargados');return;}
   el('matches-list').innerHTML=`<div class="space-y-3">${list.map(matchCard).join('')}</div>`;
 }
 
 function matchCard(m){
   const pred=myPreds[m.id],now=new Date(),mDate=new Date(m.match_date);
-  const locked=mDate<=now||m.status!=='SCHEDULED',finished=m.status==='FINISHED';
-  const ok=canPredict(m.phase);
-  const pts=finished&&pred?calcPoints(pred.predicted_home,pred.predicted_away,m.home_score,m.away_score):null;
-  const dateStr=mDate.toLocaleDateString('es-MX',{weekday:'short',month:'short',day:'numeric'});
-  const timeStr=mDate.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const locked=mDate<=now||m.status!=='SCHEDULED',fin=m.status==='FINISHED';
+  const ok=canPred(m.phase);
+  const pts=fin&&pred?calcPts(pred.predicted_home,pred.predicted_away,m.home_score,m.away_score):null;
+  const ds=mDate.toLocaleDateString('es-MX',{weekday:'short',month:'short',day:'numeric'});
+  const ts=mDate.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
   const badge={LIVE:'<span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">🔴 EN VIVO</span>',FINISHED:'<span class="bg-gray-700 text-gray-300 text-xs px-2 py-0.5 rounded-full">Finalizado</span>',SCHEDULED:'<span class="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded-full">Pendiente</span>'}[m.status]||'';
-  const lbl=m.phase==='GROUP'?`Grupo ${m.group_name??''} · J${m.matchday??''}`:phaseLabel(m.group_name||m.phase);
+  const lbl=m.phase==='GROUP'?`Grupo ${m.group_name??''} · J${m.matchday??''}`:phLbl(m.group_name||m.phase);
   let bot='';
-  if(finished){
+  if(fin){
     const col=pts===5?'text-green-400':pts===3?'text-yellow-400':'text-red-400';
     bot=`<div class="mt-3 pt-3 border-t border-gray-800 grid grid-cols-3 gap-2 text-center">
       <div><div class="text-xs text-gray-500 mb-0.5">Resultado</div><div class="font-bold text-white">${m.home_score}-${m.away_score}</div></div>
       <div><div class="text-xs text-gray-500 mb-0.5">Tu pick</div><div class="font-bold ${pred?col:'text-gray-600'}">${pred?`${pred.predicted_home}-${pred.predicted_away}`:'N/A'}</div></div>
       <div><div class="text-xs text-gray-500 mb-0.5">Puntos</div><div class="text-xl font-extrabold text-yellow-400">${pts!==null?pts:'–'}</div></div>
     </div>`;
-  } else if(!locked&&ok){
+  }else if(!locked&&ok){
     bot=`<div class="mt-3 pt-3 border-t border-gray-800"><div class="text-xs text-gray-500 mb-2 text-center">Tu predicción:</div>
       <div class="flex items-center justify-center gap-2">
         <span class="text-xs text-gray-400 w-20 text-right truncate">${m.home_team}</span>
@@ -446,22 +480,21 @@ function matchCard(m){
         <span class="text-xs text-gray-400 w-20 truncate">${m.away_team}</span>
         <button onclick="submitPred(${m.id})" class="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-2 rounded-lg font-bold">${pred?'✏️':'💾'}</button>
       </div></div>`;
-  } else if(!locked&&!ok){
-    bot=`<div class="mt-3 pt-3 border-t border-gray-800 text-center text-xs text-yellow-600">⏳ Pago pendiente de confirmación para predecir</div>`;
-  } else if(pred){
+  }else if(!locked&&!ok){
+    bot=`<div class="mt-3 pt-3 border-t border-gray-800 text-center text-xs text-yellow-600">⏳ Pago pendiente de confirmación</div>`;
+  }else if(pred){
     bot=`<div class="mt-3 pt-3 border-t border-gray-800 flex justify-between items-center">
       <span class="text-gray-500 text-xs">Tu pick:</span>
       <span class="font-bold text-yellow-400">${pred.predicted_home} - ${pred.predicted_away}</span>
-      <span class="text-gray-600 text-xs">🔒 Cerrado</span>
-    </div>`;
-  } else {
+      <span class="text-gray-600 text-xs">🔒 Cerrado</span></div>`;
+  }else{
     bot=`<div class="mt-3 pt-3 border-t border-gray-800 text-center text-xs text-gray-600">🔒 Sin predicción</div>`;
   }
   return`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
     <div class="flex justify-between items-center mb-2 text-xs"><span class="text-gray-500">${lbl}</span>${badge}</div>
     <div class="flex items-center gap-2">
       <div class="flex-1 text-right"><div class="font-bold text-sm">${m.home_team}</div></div>
-      <div class="text-center px-2 min-w-[70px]">${finished?`<div class="text-xl font-extrabold text-green-400">${m.home_score}-${m.away_score}</div>`:`<div class="text-xs text-gray-400">${dateStr}</div><div class="font-bold text-white text-sm">${timeStr}</div>`}</div>
+      <div class="text-center px-2 min-w-[70px]">${fin?`<div class="text-xl font-extrabold text-green-400">${m.home_score}-${m.away_score}</div>`:`<div class="text-xs text-gray-400">${ds}</div><div class="font-bold text-white text-sm">${ts}</div>`}</div>
       <div class="flex-1"><div class="font-bold text-sm">${m.away_team}</div></div>
     </div>${bot}</div>`;
 }
@@ -469,53 +502,55 @@ function matchCard(m){
 async function submitPred(matchId){
   const ph=parseInt(el(`ph-${matchId}`)?.value),pa=parseInt(el(`pa-${matchId}`)?.value);
   if(isNaN(ph)||isNaN(pa)){toast('⚠️ Ingresa los dos marcadores','err');return;}
-  const existing=myPreds[matchId];let error;
-  if(existing){
-    ({error}=await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',existing.id));
-    if(!error)myPreds[matchId]={...existing,predicted_home:ph,predicted_away:pa};
-  } else {
+  const ex=myPreds[matchId]; let error;
+  if(ex){
+    ({error}=await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id));
+    if(!error)myPreds[matchId]={...ex,predicted_home:ph,predicted_away:pa};
+  }else{
     const {data,error:e}=await db.from('predictions').insert({user_id:session.user.id,match_id:matchId,predicted_home:ph,predicted_away:pa}).select().single();
-    error=e;if(!error)myPreds[matchId]=data;
+    error=e; if(!error)myPreds[matchId]=data;
   }
   if(error){toast('❌ Error al guardar','err');return;}
-  toast('✅ Predicción guardada');renderMatches();
+  toast('✅ Predicción guardada'); renderMatches();
 }
 
-// MIS PICKS
+// ── MIS PICKS ────────────────────────────────────
 function renderMyPicks(){
-  const conf=myUserPots.filter(u=>u.confirmed);
-  if(!conf.length){el('mypicks-container').innerHTML=empty('⏳','Tu pago aún no ha sido confirmado.<br><span class="text-xs">Cuando el admin confirme podrás predecir.</span>');return;}
-  const finished=allMatches.filter(m=>m.status==='FINISHED');
-  let gPts=0,kPts=0,hits=0,total=0;
-  finished.forEach(m=>{
+  if(!myUserPots.some(u=>u.confirmed)){
+    el('mypicks-container').innerHTML=empty('⏳','Tu pago aún no ha sido confirmado.<br><span class="text-xs">El admin te confirmará pronto.</span>');return;
+  }
+  const fin=allMatches.filter(m=>m.status==='FINISHED');
+  let gP=0,kP=0,hits=0,total=0;
+  fin.forEach(m=>{
     const p=myPreds[m.id];if(!p)return;
-    const pts=calcPoints(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
-    if(m.phase==='GROUP')gPts+=pts;else kPts+=pts;
+    const pts=calcPts(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
+    if(m.phase==='GROUP')gP+=pts;else kP+=pts;
     total++;if(pts>0)hits++;
   });
   let html=`<div class="grid grid-cols-3 gap-2 mb-5">
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-yellow-400">${gPts}</div><div class="text-xs text-gray-500">Pts Grupos</div></div>
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-purple-400">${kPts}</div><div class="text-xs text-gray-500">Pts Eliminat.</div></div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-yellow-400">${gP}</div><div class="text-xs text-gray-500">Pts Grupos</div></div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-purple-400">${kP}</div><div class="text-xs text-gray-500">Pts Eliminat.</div></div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center"><div class="text-2xl font-extrabold text-green-400">${hits}/${total}</div><div class="text-xs text-gray-500">Aciertos</div></div>
   </div>`;
-  if(finished.length){
+  if(!fin.length) html+=empty('📋','Los resultados aparecerán aquí conforme avance el torneo');
+  else{
     html+=`<p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Historial</p><div class="space-y-2">`;
-    finished.forEach(m=>{
-      const p=myPreds[m.id],pts=p?calcPoints(p.predicted_home,p.predicted_away,m.home_score,m.away_score):null;
+    fin.forEach(m=>{
+      const p=myPreds[m.id],pts=p?calcPts(p.predicted_home,p.predicted_away,m.home_score,m.away_score):null;
       const col=pts===5?'text-green-400':pts===3?'text-yellow-400':'text-red-400';
       html+=`<div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center gap-2">
-        <div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${m.home_team} vs ${m.away_team}</div><div class="text-xs text-gray-500">${phaseLabel(m.phase)}</div></div>
+        <div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${m.home_team} vs ${m.away_team}</div><div class="text-xs text-gray-500">${phLbl(m.phase)}</div></div>
         <div class="text-center text-xs"><div class="text-gray-500">Real</div><div class="font-bold text-white">${m.home_score}-${m.away_score}</div></div>
         <div class="text-center text-xs"><div class="text-gray-500">Pick</div><div class="font-bold ${p?col:'text-gray-600'}">${p?`${p.predicted_home}-${p.predicted_away}`:'N/A'}</div></div>
         <div class="text-center w-10"><div class="text-xs text-gray-500">Pts</div><div class="text-xl font-extrabold text-yellow-400">${pts??'–'}</div></div>
       </div>`;
     });
     html+=`</div>`;
-  } else html+=empty('📋','Los resultados aparecerán aquí conforme avance el torneo');
+  }
   el('mypicks-container').innerHTML=html;
 }
 
-// ADMIN
+// ── ADMIN ────────────────────────────────────────
 function renderAdmin(){
   if(!profile?.is_admin){el('admin-container').innerHTML='<p class="text-red-400">Acceso no autorizado</p>';return;}
   const pending=allMatches.filter(m=>m.status!=='FINISHED').slice(0,15);
@@ -523,10 +558,10 @@ function renderAdmin(){
 
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <h3 class="font-bold mb-3">💰 Montos de Potes</h3>
-      ${allPots.map(pot=>`<div class="flex items-center gap-3 mb-3">
-        <span class="text-sm font-semibold w-36">${pot.name}</span>
-        <input type="number" id="pai-${pot.id}" value="${pot.amount||0}" min="0" class="w-28 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:outline-none"/>
-        <button onclick="savePotAmt('${pot.id}')" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold">Guardar</button>
+      ${allPots.map(p=>`<div class="flex items-center gap-3 mb-3">
+        <span class="text-sm font-semibold w-36">${p.name}</span>
+        <input type="number" id="pai-${p.id}" value="${p.amount||0}" min="0" class="w-28 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-green-500 focus:outline-none"/>
+        <button onclick="savePotAmt('${p.id}')" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold">Guardar</button>
       </div>`).join('')}
     </div>
 
@@ -543,9 +578,9 @@ function renderAdmin(){
           <div class="text-sm font-semibold mb-1">${m.home_team} vs ${m.away_team}</div>
           <div class="text-xs text-gray-500 mb-2">${new Date(m.match_date).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'})}</div>
           <div class="flex items-center gap-2">
-            <input type="number" min="0" id="rh-${m.id}" placeholder="Local" class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
+            <input type="number" min="0" id="rh-${m.id}" placeholder="Local" class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm"/>
             <span class="text-gray-400">-</span>
-            <input type="number" min="0" id="ra-${m.id}" placeholder="Visit." class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm focus:border-green-500 focus:outline-none"/>
+            <input type="number" min="0" id="ra-${m.id}" placeholder="Visit." class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm"/>
             <button onclick="saveResult(${m.id})" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold ml-1">Guardar</button>
           </div>
         </div>`).join('')}</div>`}
@@ -566,7 +601,7 @@ function renderPayPanel(){
     if(!byUser[up.user_id])byUser[up.user_id]={name:up.profiles?.display_name||'?',email:up.profiles?.email||'',pots:[]};
     byUser[up.user_id].pots.push(up);
   });
-  if(!Object.keys(byUser).length){panel.innerHTML='<p class="text-gray-500 text-sm">No hay usuarios inscritos</p>';return;}
+  if(!Object.keys(byUser).length){panel.innerHTML='<p class="text-gray-500 text-sm">No hay usuarios inscritos aún</p>';return;}
   const lbl={GROUP:'⚽ Grupos',KNOCKOUT:'🏆 Eliminat.',COMPLETE:'🌍 Completa'};
   panel.innerHTML=`<div class="space-y-3">${Object.entries(byUser).map(([uid,ud])=>`
     <div class="bg-gray-800 rounded-xl p-3">
@@ -585,22 +620,22 @@ function renderPayPanel(){
 
 async function confirmPayment(uid,potId){
   const {error}=await db.from('user_pots').update({confirmed:true,confirmed_at:new Date().toISOString(),confirmed_by:session.user.id}).eq('user_id',uid).eq('pot_id',potId);
-  if(error){toast('❌ Error','err');return;}
+  if(error){toast('❌ Error: '+error.message,'err');return;}
   toast('✅ Pago confirmado');
-  await loadAllUserPots();renderPayPanel();renderPotes();
+  await loadUserPots();renderPayPanel();renderPotes();
 }
 async function revokePayment(uid,potId){
   const {error}=await db.from('user_pots').update({confirmed:false,confirmed_at:null,confirmed_by:null}).eq('user_id',uid).eq('pot_id',potId);
   if(error){toast('❌ Error','err');return;}
   toast('⚠️ Pago revocado');
-  await loadAllUserPots();renderPayPanel();
+  await loadUserPots();renderPayPanel();
 }
 async function savePotAmt(potId){
   const amt=parseFloat(el(`pai-${potId}`)?.value||0);
   const {error}=await db.from('pots').update({amount:amt,updated_at:new Date().toISOString()}).eq('id',potId);
   if(error){toast('❌ Error','err');return;}
   toast('✅ Monto actualizado');
-  await loadPots();renderPotes();
+  await loadPots();renderPotes();renderRegAmounts();
 }
 async function saveResult(matchId){
   const h=parseInt(el(`rh-${matchId}`)?.value),a=parseInt(el(`ra-${matchId}`)?.value);
@@ -608,7 +643,7 @@ async function saveResult(matchId){
   const {error}=await db.from('matches').update({home_score:h,away_score:a,status:'FINISHED'}).eq('id',matchId);
   if(error){toast('❌ Error','err');return;}
   const {data:preds}=await db.from('predictions').select('*').eq('match_id',matchId);
-  for(const p of(preds||[])){await db.from('predictions').update({points:calcPoints(p.predicted_home,p.predicted_away,h,a)}).eq('id',p.id);}
+  for(const p of(preds||[])){await db.from('predictions').update({points:calcPts(p.predicted_home,p.predicted_away,h,a)}).eq('id',p.id);}
   toast('✅ Resultado guardado');await loadAll();renderAdmin();
 }
 async function syncMatches(){
@@ -621,27 +656,28 @@ async function syncMatches(){
     for(const m of data.matches){
       await db.from('matches').upsert({external_id:String(m.id),match_date:m.utcDate,home_team:m.homeTeam.name,away_team:m.awayTeam.name,home_score:m.score?.fullTime?.home??null,away_score:m.score?.fullTime?.away??null,status:m.status==='FINISHED'?'FINISHED':m.status==='IN_PLAY'?'LIVE':'SCHEDULED',phase:pm[m.stage]||'GROUP',group_name:m.group?.replace('GROUP_','')||null,matchday:m.matchday||1},{onConflict:'external_id'});
     }
-    toast(`✅ ${data.matches.length} partidos sincronizados`);await loadAll();renderAdmin();
+    toast(`✅ ${data.matches.length} sincronizados`);await loadAll();renderAdmin();
   }catch(e){toast('❌ Error de conexión','err');}
 }
 
-// HELPERS
-function phaseLabel(p){return{GROUP:'Fase Grupos',KNOCKOUT:'Eliminatorias',FINAL:'Final',SF:'Semifinal',QF:'Cuartos',R32:'Ronda de 32',R16:'Octavos','3PL':'3er Lugar'}[p]||p||'';}
+// ── HELPERS ──────────────────────────────────────
+function phLbl(p){return{GROUP:'Grupos',KNOCKOUT:'Eliminatorias',FINAL:'Final',SF:'Semifinal',QF:'Cuartos',R32:'R32',R16:'Octavos','3PL':'3er Lugar'}[p]||p||'';}
 function empty(i,m){return`<div class="text-center py-14 text-gray-500"><div class="text-5xl mb-3">${i}</div><p class="text-sm">${m}</p></div>`;}
 function el(id){return document.getElementById(id);}
 function v(id){return el(id)?.value?.trim()||'';}
-function show(id){el(id).classList.remove('hidden');}
-function hide(el){el?.classList.add('hidden');}
-function showEl(el,msg){el.innerHTML=msg;el.classList.remove('hidden');}
-function showLoginForm(){el('form-login').classList.remove('hidden');el('form-register').classList.add('hidden');}
-function showRegisterForm(){el('form-register').classList.remove('hidden');el('form-login').classList.add('hidden');}
+function hide(e){e?.classList.add('hidden');}
+function showEl(e,m){e.innerHTML=m;e.classList.remove('hidden');}
+function showLogin(){el('form-login').classList.remove('hidden');el('form-register').classList.add('hidden');}
+function showReg(){el('form-register').classList.remove('hidden');el('form-login').classList.add('hidden');}
+
+let toastTid=null;
 function toast(msg,type='ok'){
   const t=el('toast');
   t.textContent=msg;
-  t.className=`fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-50 ${type==='err'?'bg-red-600':'bg-green-600'}`;
-  t.classList.remove('hidden');
-  clearTimeout(t._tid);
-  t._tid=setTimeout(()=>t.classList.add('hidden'),3000);
+  t.className=`fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-[999] transition-opacity ${type==='err'?'bg-red-600':'bg-green-700'}`;
+  t.style.opacity='1'; t.style.pointerEvents='auto';
+  clearTimeout(toastTid);
+  toastTid=setTimeout(()=>{t.style.opacity='0';t.style.pointerEvents='none';},3000);
 }
 </script>
 </body>
