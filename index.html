@@ -55,9 +55,64 @@
         </button>
         <div id="login-error" class="text-red-400 text-sm text-center hidden"></div>
       </div>
-      <p class="text-center text-gray-500 text-sm mt-4">
+      <div class="text-center mt-3">
+        <button onclick="showForgot()" class="text-gray-500 hover:text-gray-300 text-xs hover:underline">
+          ¿Olvidaste tu contraseña?
+        </button>
+      </div>
+      <p class="text-center text-gray-500 text-sm mt-3">
         ¿Primera vez? <button onclick="showReg()" class="text-green-400 hover:underline ml-1">Crear cuenta</button>
       </p>
+    </div>
+
+    <!-- FORGOT PASSWORD -->
+    <div id="form-forgot" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
+      <h2 class="text-xl font-bold mb-2 text-center">Recuperar Contraseña</h2>
+      <p class="text-gray-400 text-sm text-center mb-5">Te mandaremos un link a tu correo para crear una nueva contraseña.</p>
+      <div class="space-y-3">
+        <input id="forgot-email" type="email" placeholder="Tu correo electrónico"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
+        <button onclick="doForgot()"
+          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors">
+          Enviar link de recuperación 📧
+        </button>
+        <div id="forgot-error"   class="text-red-400 text-sm text-center hidden"></div>
+        <div id="forgot-success" class="text-green-400 text-sm text-center hidden"></div>
+      </div>
+      <p class="text-center text-gray-500 text-sm mt-4">
+        <button onclick="showLogin()" class="text-green-400 hover:underline">← Volver al login</button>
+      </p>
+    </div>
+
+    <!-- RESET PASSWORD (cuando llegan desde el link del correo) -->
+    <div id="form-reset" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
+      <h2 class="text-xl font-bold mb-2 text-center">🔐 Nueva Contraseña</h2>
+      <p class="text-gray-400 text-sm text-center mb-5">Ingresa tu nueva contraseña.</p>
+      <div class="space-y-3">
+        <input id="reset-password" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
+        <input id="reset-password2" type="password" placeholder="Confirmar contraseña"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
+        <button onclick="doReset()"
+          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors">
+          Guardar nueva contraseña ✅
+        </button>
+        <div id="reset-error"   class="text-red-400 text-sm text-center hidden"></div>
+        <div id="reset-success" class="text-green-400 text-sm text-center hidden"></div>
+      </div>
+    </div>
+
+    <!-- LINK EXPIRADO -->
+    <div id="form-expired" class="bg-gray-900 rounded-2xl p-6 border border-red-800 shadow-2xl hidden">
+      <div class="text-center">
+        <div class="text-5xl mb-3">⏰</div>
+        <h2 class="text-xl font-bold mb-2 text-red-400">Link expirado</h2>
+        <p class="text-gray-400 text-sm mb-5">El link de recuperación ya no es válido. Los links expiran después de 1 hora.</p>
+        <button onclick="showForgot()"
+          class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors">
+          Solicitar nuevo link 📧
+        </button>
+      </div>
     </div>
 
     <!-- REGISTER -->
@@ -201,12 +256,20 @@ function showApp(){
 // ── BOOT ─────────────────────────────────────────
 (async()=>{
   showAuth();
+
+  // Detectar si viene desde link de recuperación
+  const hash = window.location.hash;
+  if(hash.includes('error=access_denied')||hash.includes('otp_expired')){
+    showExpired(); return;
+  }
+
   await loadPots();
   renderRegAmounts();
   const {data} = await db.auth.getSession();
   if(data.session){ session=data.session; await boot(); }
 
   db.auth.onAuthStateChange(async(evt,s)=>{
+    if(evt==='PASSWORD_RECOVERY'){ showResetForm(); return; }
     if(evt==='SIGNED_IN'&&s){ session=s; await boot(); }
     if(evt==='SIGNED_OUT'){
       session=profile=null;
@@ -287,7 +350,7 @@ async function loadAllPreds(){
   allPreds=data||[];
 }
 async function loadUserPots(){
-  const {data,error}=await db.from('user_pots').select('*,profiles!user_pots_user_id_fkey(display_name,email)');
+  const {data,error}=await db.from('user_pots').select('*,profiles(display_name,email)');
   if(error){ console.error('user_pots error:',error); allUserPots=[];myUserPots=[];return; }
   allUserPots=data||[];
   myUserPots=allUserPots.filter(u=>u.user_id===session?.user?.id);
@@ -667,8 +730,38 @@ function el(id){return document.getElementById(id);}
 function v(id){return el(id)?.value?.trim()||'';}
 function hide(e){e?.classList.add('hidden');}
 function showEl(e,m){e.innerHTML=m;e.classList.remove('hidden');}
-function showLogin(){el('form-login').classList.remove('hidden');el('form-register').classList.add('hidden');}
-function showReg(){el('form-register').classList.remove('hidden');el('form-login').classList.add('hidden');}
+function showLogin(){el('form-login').classList.remove('hidden');el('form-register').classList.add('hidden');el('form-forgot')?.classList.add('hidden');el('form-reset')?.classList.add('hidden');el('form-expired')?.classList.add('hidden');}
+function showReg(){el('form-register').classList.remove('hidden');el('form-login').classList.add('hidden');el('form-forgot')?.classList.add('hidden');el('form-reset')?.classList.add('hidden');el('form-expired')?.classList.add('hidden');}
+function showForgot(){el('form-forgot').classList.remove('hidden');el('form-login').classList.add('hidden');el('form-register').classList.add('hidden');el('form-reset')?.classList.add('hidden');el('form-expired')?.classList.add('hidden');}
+function showResetForm(){el('form-reset').classList.remove('hidden');el('form-login').classList.add('hidden');el('form-register').classList.add('hidden');el('form-forgot')?.classList.add('hidden');el('form-expired')?.classList.add('hidden');}
+function showExpired(){el('form-expired').classList.remove('hidden');el('form-login').classList.add('hidden');el('form-register').classList.add('hidden');el('form-forgot')?.classList.add('hidden');el('form-reset')?.classList.add('hidden');}
+
+async function doForgot(){
+  const email=v('forgot-email');
+  const errEl=el('forgot-error'),sucEl=el('forgot-success');
+  hide(errEl);hide(sucEl);
+  if(!email){showEl(errEl,'Ingresa tu correo');return;}
+  const {error}=await db.auth.resetPasswordForEmail(email,{
+    redirectTo:'https://quiniela-mundial-2026-theta.vercel.app'
+  });
+  if(error) showEl(errEl,'No se pudo enviar. Verifica que sea el correo correcto.');
+  else showEl(sucEl,'✅ Revisa tu correo — te mandamos el link para crear una nueva contraseña.');
+}
+
+async function doReset(){
+  const pw=v('reset-password'),pw2=v('reset-password2');
+  const errEl=el('reset-error'),sucEl=el('reset-success');
+  hide(errEl);hide(sucEl);
+  if(!pw||!pw2){showEl(errEl,'Completa ambos campos');return;}
+  if(pw!==pw2){showEl(errEl,'Las contraseñas no coinciden');return;}
+  if(pw.length<6){showEl(errEl,'Mínimo 6 caracteres');return;}
+  const {error}=await db.auth.updateUser({password:pw});
+  if(error) showEl(errEl,'Error al actualizar. Intenta solicitar un nuevo link.');
+  else{
+    showEl(sucEl,'✅ Contraseña actualizada. Redirigiendo...');
+    setTimeout(()=>{ window.location.href='/'; },2000);
+  }
+}
 
 let toastTid=null;
 function toast(msg,type='ok'){
