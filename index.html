@@ -192,6 +192,10 @@
         class="text-xs text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors">
         Salir 🚪
       </button>
+      <button onclick="showChangePwd()"
+        class="text-xs text-gray-400 hover:text-yellow-400 border border-gray-700 hover:border-yellow-700 px-3 py-1.5 rounded-lg transition-colors ml-2">
+        🔑
+      </button>
     </div>
     <div class="max-w-3xl mx-auto flex overflow-x-auto no-scrollbar border-t border-gray-800">
       <button onclick="goTab('potes')"    id="tb-potes"    class="tab-btn tab-active flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">💰 Potes</button>
@@ -259,18 +263,39 @@ function showApp(){
 
   // Detectar si viene desde link de recuperación
   const hash = window.location.hash;
+  const params = new URLSearchParams(hash.replace('#',''));
+
   if(hash.includes('error=access_denied')||hash.includes('otp_expired')){
     showExpired(); return;
   }
 
-  await loadPots();
-  renderRegAmounts();
-  const {data} = await db.auth.getSession();
-  if(data.session){ session=data.session; await boot(); }
+  if(hash.includes('type=recovery')||params.get('type')==='recovery'){
+    // Dejar que Supabase procese el token automáticamente
+    await loadPots();
+    renderRegAmounts();
+    // El evento PASSWORD_RECOVERY se disparará en onAuthStateChange
+  } else {
+    await loadPots();
+    renderRegAmounts();
+    const {data} = await db.auth.getSession();
+    if(data.session){ session=data.session; await boot(); }
+  }
 
   db.auth.onAuthStateChange(async(evt,s)=>{
-    if(evt==='PASSWORD_RECOVERY'){ showResetForm(); return; }
-    if(evt==='SIGNED_IN'&&s){ session=s; await boot(); }
+    if(evt==='PASSWORD_RECOVERY'){
+      show('screen-auth');
+      showResetForm();
+      return;
+    }
+    if(evt==='SIGNED_IN'&&s){
+      // Si venía de un recovery, no cargar la app — mostrar reset form
+      if(hash.includes('type=recovery')||params.get('type')==='recovery'){
+        show('screen-auth');
+        showResetForm();
+        return;
+      }
+      session=s; await boot();
+    }
     if(evt==='SIGNED_OUT'){
       session=profile=null;
       allMatches=[];myPreds={};allPreds=[];
@@ -773,5 +798,44 @@ function toast(msg,type='ok'){
   toastTid=setTimeout(()=>{t.style.opacity='0';t.style.pointerEvents='none';},3000);
 }
 </script>
+<!-- Modal Cambiar Contraseña -->
+<div id="modal-pwd" class="fixed inset-0 bg-black/70 z-[200] hidden flex items-center justify-center p-4">
+  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+    <h3 class="text-lg font-bold mb-4 text-center">🔑 Cambiar Contraseña</h3>
+    <div class="space-y-3">
+      <input id="cpwd-new" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)"
+        class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
+      <input id="cpwd-new2" type="password" placeholder="Confirmar nueva contraseña"
+        class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
+      <button onclick="doChangePwd()"
+        class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors">
+        Guardar contraseña
+      </button>
+      <button onclick="hideChangePwd()"
+        class="w-full bg-gray-800 hover:bg-gray-700 text-gray-400 font-bold py-2 rounded-xl transition-colors text-sm">
+        Cancelar
+      </button>
+      <div id="cpwd-error"   class="text-red-400 text-sm text-center hidden"></div>
+      <div id="cpwd-success" class="text-green-400 text-sm text-center hidden"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showChangePwd(){ el('modal-pwd').classList.remove('hidden'); el('cpwd-error').classList.add('hidden'); el('cpwd-success').classList.add('hidden'); el('cpwd-new').value=''; el('cpwd-new2').value=''; }
+function hideChangePwd(){ el('modal-pwd').classList.add('hidden'); }
+async function doChangePwd(){
+  const pw=v('cpwd-new'), pw2=v('cpwd-new2');
+  const errEl=el('cpwd-error'), sucEl=el('cpwd-success');
+  hide(errEl); hide(sucEl);
+  if(!pw||!pw2){ showEl(errEl,'Completa ambos campos'); return; }
+  if(pw!==pw2){ showEl(errEl,'Las contraseñas no coinciden'); return; }
+  if(pw.length<6){ showEl(errEl,'Mínimo 6 caracteres'); return; }
+  const {error} = await db.auth.updateUser({password: pw});
+  if(error) showEl(errEl,'Error al cambiar. Intenta de nuevo.');
+  else{ showEl(sucEl,'✅ Contraseña cambiada exitosamente'); setTimeout(hideChangePwd, 2000); }
+}
+</script>
+
 </body>
 </html>
