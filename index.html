@@ -720,7 +720,7 @@ async function revokePayment(uid,potId){
 }
 async function savePotAmt(potId){
   const amt=parseFloat(el(`pai-${potId}`)?.value||0);
-  const {error}=await db.from('pots').update({amount:amt,updated_at:new Date().toISOString()}).eq('id',potId);
+  const {error}=await db.from('pots').update({amount:amt}).eq('id',potId);
   if(error){toast('❌ Error','err');return;}
   toast('✅ Monto actualizado');
   await loadPots();renderPotes();renderRegAmounts();
