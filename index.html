@@ -371,7 +371,7 @@ async function loadMyPreds(){
   myPreds={};(data||[]).forEach(p=>{myPreds[p.match_id]=p;});
 }
 async function loadAllPreds(){
-  const {data}=await db.from('predictions').select('*,profiles(display_name)');
+  const {data}=await db.from('predictions').select('*,'*,profiles!user_pots_user_id_fkey(display_name,email)');
   allPreds=data||[];
 }
 async function loadUserPots(){
