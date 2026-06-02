@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
   <style>
-    /* ── CRÍTICO: pantallas como capas, nunca apiladas ── */
     #screen-auth, #screen-app {
       position: fixed; inset: 0; width: 100%; height: 100%;
       overflow-y: auto; background: #030712;
@@ -16,7 +15,6 @@
     #screen-auth { z-index: 100; }
     #screen-app  { z-index: 10;  }
     .screen-hidden { opacity: 0; pointer-events: none; visibility: hidden; }
-
     .tab-active { border-bottom: 3px solid #22c55e; color: #22c55e !important; }
     .fade-in { animation: fadeIn 0.25s ease-out; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
@@ -31,7 +29,6 @@
 </head>
 <body class="bg-gray-950 text-gray-100">
 
-<!-- ══════════════ AUTH ══════════════ -->
 <div id="screen-auth" class="flex items-center justify-center p-4">
   <div class="w-full max-w-md">
     <div class="text-center mb-8">
@@ -41,7 +38,6 @@
       <p class="text-gray-500 text-sm mt-1">🇺🇸 USA · 🇨🇦 Canadá · 🇲🇽 México</p>
     </div>
 
-    <!-- LOGIN -->
     <div id="form-login" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl">
       <h2 class="text-xl font-bold mb-5 text-center">Iniciar Sesión</h2>
       <div class="space-y-3">
@@ -65,7 +61,6 @@
       </p>
     </div>
 
-    <!-- FORGOT PASSWORD -->
     <div id="form-forgot" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
       <h2 class="text-xl font-bold mb-2 text-center">Recuperar Contraseña</h2>
       <p class="text-gray-400 text-sm text-center mb-5">Te mandaremos un link a tu correo para crear una nueva contraseña.</p>
@@ -84,7 +79,6 @@
       </p>
     </div>
 
-    <!-- RESET PASSWORD (cuando llegan desde el link del correo) -->
     <div id="form-reset" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
       <h2 class="text-xl font-bold mb-2 text-center">🔐 Nueva Contraseña</h2>
       <p class="text-gray-400 text-sm text-center mb-5">Ingresa tu nueva contraseña.</p>
@@ -102,7 +96,6 @@
       </div>
     </div>
 
-    <!-- LINK EXPIRADO -->
     <div id="form-expired" class="bg-gray-900 rounded-2xl p-6 border border-red-800 shadow-2xl hidden">
       <div class="text-center">
         <div class="text-5xl mb-3">⏰</div>
@@ -115,7 +108,6 @@
       </div>
     </div>
 
-    <!-- REGISTER -->
     <div id="form-register" class="bg-gray-900 rounded-2xl p-6 border border-gray-800 shadow-2xl hidden">
       <h2 class="text-xl font-bold mb-5 text-center">Crear Cuenta</h2>
       <div class="space-y-3">
@@ -127,7 +119,6 @@
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
         <input id="reg-code"     type="text"     placeholder="Código de invitación"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500"/>
-
         <div class="pt-1">
           <p class="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-widest">¿En qué pote(s) quieres jugar?</p>
           <div class="space-y-2">
@@ -160,7 +151,6 @@
             </div>
           </div>
         </div>
-
         <button onclick="doRegister()"
           class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors text-lg">
           Unirse 🎯
@@ -175,10 +165,7 @@
   </div>
 </div>
 
-<!-- ══════════════ APP ══════════════ -->
 <div id="screen-app" class="screen-hidden flex flex-col min-h-full">
-
-  <!-- Header -->
   <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -229,25 +216,21 @@
   </main>
 </div>
 
-<!-- Toast -->
 <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-2xl z-[999] opacity-0 transition-opacity pointer-events-none"></div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────
 const SUPABASE_URL = 'https://qxebgqqyyvknmlmqebgq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FVmzGuPA45n9qyET5IR3Dg_oRkNgxpg';
 const INVITE_CODE  = 'MUNDIAL2026';
 const {createClient} = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── STATE ────────────────────────────────────────
 let session=null, profile=null;
 let allMatches=[], myPreds={}, allPreds=[];
 let allPots=[], myUserPots=[], allUserPots=[];
 let selPots={GROUP:false,KNOCKOUT:false,COMPLETE:false};
 let lbPot='GROUP', mPhase='ALL';
 
-// ── SCREEN CONTROL ───────────────────────────────
 function showAuth(){
   el('screen-auth').classList.remove('screen-hidden');
   el('screen-app').classList.add('screen-hidden');
@@ -257,40 +240,31 @@ function showApp(){
   el('screen-app').classList.remove('screen-hidden');
 }
 
-// ── BOOT ─────────────────────────────────────────
 (async()=>{
   showAuth();
-
-  // Detectar si viene desde link de recuperación
   const hash = window.location.hash;
   const params = new URLSearchParams(hash.replace('#',''));
-
   if(hash.includes('error=access_denied')||hash.includes('otp_expired')){
     showExpired(); return;
   }
-
   if(hash.includes('type=recovery')||params.get('type')==='recovery'){
-    // Dejar que Supabase procese el token automáticamente
     await loadPots();
     renderRegAmounts();
-    // El evento PASSWORD_RECOVERY se disparará en onAuthStateChange
   } else {
     await loadPots();
     renderRegAmounts();
     const {data} = await db.auth.getSession();
     if(data.session){ session=data.session; await boot(); }
   }
-
   db.auth.onAuthStateChange(async(evt,s)=>{
     if(evt==='PASSWORD_RECOVERY'){
-      show('screen-auth');
+      showAuth();
       showResetForm();
       return;
     }
     if(evt==='SIGNED_IN'&&s){
-      // Si venía de un recovery, no cargar la app — mostrar reset form
       if(hash.includes('type=recovery')||params.get('type')==='recovery'){
-        show('screen-auth');
+        showAuth();
         showResetForm();
         return;
       }
@@ -312,7 +286,6 @@ async function boot(){
   renderApp();
 }
 
-// ── AUTH ─────────────────────────────────────────
 async function doLogin(){
   const email=v('login-email'),pw=v('login-password'),err=el('login-error');
   hide(err);
@@ -347,13 +320,11 @@ async function doLogout(){
   btn.disabled=true; btn.textContent='Saliendo...';
   const {error}=await db.auth.signOut();
   if(error){ btn.disabled=false; btn.textContent='Salir 🚪'; toast('❌ Error al salir','err'); return; }
-  // Forzar si onAuthStateChange no dispara
   session=profile=null;
   showLogin(); showAuth();
   btn.disabled=false; btn.textContent='Salir 🚪';
 }
 
-// ── DATA ─────────────────────────────────────────
 async function loadProfile(){
   const {data}=await db.from('profiles').select('*').eq('id',session.user.id).single();
   profile=data;
@@ -371,7 +342,7 @@ async function loadMyPreds(){
   myPreds={};(data||[]).forEach(p=>{myPreds[p.match_id]=p;});
 }
 async function loadAllPreds(){
-  const {data}=await db.from('predictions').select('*,'*,profiles!user_pots_user_id_fkey(display_name,email)');
+  const {data}=await db.from('predictions').select('*,profiles(display_name)');
   allPreds=data||[];
 }
 async function loadUserPots(){
@@ -384,7 +355,6 @@ async function loadAll(){
   await Promise.all([loadMatches(),loadMyPreds(),loadAllPreds(),loadUserPots()]);
 }
 
-// ── POINTS ───────────────────────────────────────
 function calcPts(ph,pa,ah,aa){
   if(ah===null||aa===null)return null;
   if(ph===ah&&pa===aa)return 5;
@@ -392,7 +362,6 @@ function calcPts(ph,pa,ah,aa){
   return pr===ar?3:0;
 }
 
-// ── RENDER APP ───────────────────────────────────
 function renderApp(){
   showApp();
   el('greeting').textContent=`Hola, ${profile?.display_name||''}!`;
@@ -400,7 +369,6 @@ function renderApp(){
   goTab('potes');
 }
 
-// ── TABS ─────────────────────────────────────────
 function goTab(tab){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
   document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('tab-active');b.classList.add('text-gray-400');});
@@ -414,7 +382,6 @@ function goTab(tab){
   if(tab==='admin')    renderAdmin();
 }
 
-// ── POTES TAB ────────────────────────────────────
 function fmt(a){return(!a||a===0)?'Por definir':'$'+Number(a).toLocaleString('es-MX');}
 
 function renderPotes(){
@@ -474,7 +441,6 @@ function togglePot(id){
   else{card.classList.remove('selected');chk.querySelector('svg').classList.add('hidden');chk.classList.remove('border-green-500');}
 }
 
-// ── LEADERBOARD ──────────────────────────────────
 function setLbPot(pot){
   lbPot=pot;
   document.querySelectorAll('.lbp-btn').forEach(b=>{b.classList.remove('bg-green-600','text-white');b.classList.add('bg-gray-800','text-gray-400');});
@@ -520,7 +486,6 @@ function renderLb(){
     }).join('')}</div>`;
 }
 
-// ── MATCHES ──────────────────────────────────────
 function canPred(phase){
   if(phase==='GROUP')    return myUserPots.some(u=>u.confirmed&&(u.pot_id==='GROUP'||u.pot_id==='COMPLETE'));
   if(phase==='KNOCKOUT') return myUserPots.some(u=>u.confirmed&&(u.pot_id==='KNOCKOUT'||u.pot_id==='COMPLETE'));
@@ -602,7 +567,6 @@ async function submitPred(matchId){
   toast('✅ Predicción guardada'); renderMatches();
 }
 
-// ── MIS PICKS ────────────────────────────────────
 function renderMyPicks(){
   if(!myUserPots.some(u=>u.confirmed)){
     el('mypicks-container').innerHTML=empty('⏳','Tu pago aún no ha sido confirmado.<br><span class="text-xs">El admin te confirmará pronto.</span>');return;
@@ -638,12 +602,10 @@ function renderMyPicks(){
   el('mypicks-container').innerHTML=html;
 }
 
-// ── ADMIN ────────────────────────────────────────
 function renderAdmin(){
   if(!profile?.is_admin){el('admin-container').innerHTML='<p class="text-red-400">Acceso no autorizado</p>';return;}
   const pending=allMatches.filter(m=>m.status!=='FINISHED').slice(0,15);
   el('admin-container').innerHTML=`<div class="space-y-4">
-
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <h3 class="font-bold mb-3">💰 Montos de Potes</h3>
       ${allPots.map(p=>`<div class="flex items-center gap-3 mb-3">
@@ -652,12 +614,10 @@ function renderAdmin(){
         <button onclick="savePotAmt('${p.id}')" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold">Guardar</button>
       </div>`).join('')}
     </div>
-
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <h3 class="font-bold mb-3">✅ Confirmar Pagos</h3>
       <div id="pay-panel">Cargando...</div>
     </div>
-
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <h3 class="font-bold mb-1">📝 Actualizar Resultados</h3>
       <p class="text-xs text-gray-400 mb-3">Puntos calculados automáticamente</p>
@@ -673,7 +633,6 @@ function renderAdmin(){
           </div>
         </div>`).join('')}</div>`}
     </div>
-
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <h3 class="font-bold mb-2">🌐 Sincronizar API</h3>
       <button onclick="syncMatches()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold">🔄 Sincronizar</button>
@@ -712,28 +671,34 @@ async function confirmPayment(uid,potId){
   toast('✅ Pago confirmado');
   await loadUserPots();renderPayPanel();renderPotes();
 }
+
 async function revokePayment(uid,potId){
   const {error}=await db.from('user_pots').update({confirmed:false,confirmed_at:null,confirmed_by:null}).eq('user_id',uid).eq('pot_id',potId);
   if(error){toast('❌ Error','err');return;}
   toast('⚠️ Pago revocado');
   await loadUserPots();renderPayPanel();
 }
+
 async function savePotAmt(potId){
   const amt=parseFloat(el(`pai-${potId}`)?.value||0);
   const {error}=await db.from('pots').update({amount:amt}).eq('id',potId);
-  if(error){toast('❌ Error','err');return;}
+  if(error){toast('❌ Error: '+error.message,'err');return;}
   toast('✅ Monto actualizado');
   await loadPots();renderPotes();renderRegAmounts();
 }
+
 async function saveResult(matchId){
   const h=parseInt(el(`rh-${matchId}`)?.value),a=parseInt(el(`ra-${matchId}`)?.value);
   if(isNaN(h)||isNaN(a)){toast('⚠️ Ingresa ambos marcadores','err');return;}
   const {error}=await db.from('matches').update({home_score:h,away_score:a,status:'FINISHED'}).eq('id',matchId);
   if(error){toast('❌ Error','err');return;}
   const {data:preds}=await db.from('predictions').select('*').eq('match_id',matchId);
-  for(const p of(preds||[])){await db.from('predictions').update({points:calcPts(p.predicted_home,p.predicted_away,h,a)}).eq('id',p.id);}
+  for(const p of(preds||[])){
+    await db.from('predictions').update({points:calcPts(p.predicted_home,p.predicted_away,h,a)}).eq('id',p.id);
+  }
   toast('✅ Resultado guardado');await loadAll();renderAdmin();
 }
+
 async function syncMatches(){
   toast('🔄 Sincronizando...');
   try{
@@ -748,7 +713,6 @@ async function syncMatches(){
   }catch(e){toast('❌ Error de conexión','err');}
 }
 
-// ── HELPERS ──────────────────────────────────────
 function phLbl(p){return{GROUP:'Grupos',KNOCKOUT:'Eliminatorias',FINAL:'Final',SF:'Semifinal',QF:'Cuartos',R32:'R32',R16:'Octavos','3PL':'3er Lugar'}[p]||p||'';}
 function empty(i,m){return`<div class="text-center py-14 text-gray-500"><div class="text-5xl mb-3">${i}</div><p class="text-sm">${m}</p></div>`;}
 function el(id){return document.getElementById(id);}
@@ -767,7 +731,7 @@ async function doForgot(){
   hide(errEl);hide(sucEl);
   if(!email){showEl(errEl,'Ingresa tu correo');return;}
   const {error}=await db.auth.resetPasswordForEmail(email,{
-    redirectTo:'https://quiniela-mundial-2026-theta.vercel.app'
+    redirectTo:'https://quiniela-mundial-2026-xwu4.vercel.app'
   });
   if(error) showEl(errEl,'No se pudo enviar. Verifica que sea el correo correcto.');
   else showEl(sucEl,'✅ Revisa tu correo — te mandamos el link para crear una nueva contraseña.');
@@ -798,7 +762,7 @@ function toast(msg,type='ok'){
   toastTid=setTimeout(()=>{t.style.opacity='0';t.style.pointerEvents='none';},3000);
 }
 </script>
-<!-- Modal Cambiar Contraseña -->
+
 <div id="modal-pwd" class="fixed inset-0 bg-black/70 z-[200] hidden flex items-center justify-center p-4">
   <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
     <h3 class="text-lg font-bold mb-4 text-center">🔑 Cambiar Contraseña</h3>
@@ -835,7 +799,7 @@ async function doChangePwd(){
   if(error) showEl(errEl,'Error al cambiar. Intenta de nuevo.');
   else{ showEl(sucEl,'✅ Contraseña cambiada exitosamente'); setTimeout(hideChangePwd, 2000); }
 }
-</script> 
+</script>
 
 </body>
 </html>
