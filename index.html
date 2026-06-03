@@ -189,6 +189,7 @@
       <button onclick="goTab('tabla')"    id="tb-tabla"    class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">🏆 Tabla</button>
       <button onclick="goTab('partidos')" id="tb-partidos" class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">⚽ Partidos</button>
       <button onclick="goTab('mispicks')" id="tb-mispicks" class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">📋 Mis Picks</button>
+      <button onclick="goTab('todospicks')" id="tb-todospicks" class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2">👥 Picks</button>
       <button onclick="goTab('admin')"    id="tb-admin"    class="tab-btn text-gray-400 flex-1 py-3 text-xs font-semibold whitespace-nowrap px-2 hidden">⚙️ Admin</button>
     </div>
   </header>
@@ -211,8 +212,9 @@
       </div>
       <div id="matches-list"></div>
     </div>
-    <div id="tab-mispicks" class="tab-panel hidden fade-in"><div id="mypicks-container"></div></div>
-    <div id="tab-admin"    class="tab-panel hidden fade-in"><div id="admin-container"></div></div>
+    <div id="tab-mispicks"   class="tab-panel hidden fade-in"><div id="mypicks-container"></div></div>
+    <div id="tab-todospicks" class="tab-panel hidden fade-in"><div id="todospicks-container"></div></div>
+    <div id="tab-admin"      class="tab-panel hidden fade-in"><div id="admin-container"></div></div>
   </main>
 </div>
 
@@ -375,11 +377,12 @@ function goTab(tab){
   el(`tab-${tab}`).classList.remove('hidden');
   el(`tb-${tab}`).classList.add('tab-active');
   el(`tb-${tab}`).classList.remove('text-gray-400');
-  if(tab==='potes')    renderPotes();
-  if(tab==='tabla')    renderLb();
-  if(tab==='partidos') renderMatches();
-  if(tab==='mispicks') renderMyPicks();
-  if(tab==='admin')    renderAdmin();
+  if(tab==='potes')      renderPotes();
+  if(tab==='tabla')      renderLb();
+  if(tab==='partidos')   renderMatches();
+  if(tab==='mispicks')   renderMyPicks();
+  if(tab==='todospicks') renderTodosPicks();
+  if(tab==='admin')      renderAdmin();
 }
 
 function fmt(a){return(!a||a===0)?'Por definir':'$'+Number(a).toLocaleString('es-MX');}
@@ -602,6 +605,115 @@ function renderMyPicks(){
   el('mypicks-container').innerHTML=html;
 }
 
+function renderTodosPicks(){
+  const container = el('todospicks-container');
+
+  // Obtener usuarios confirmados en al menos un pote
+  const confirmedUserIds = [...new Set(allUserPots.filter(u=>u.confirmed).map(u=>u.user_id))];
+  if(!confirmedUserIds.length){
+    container.innerHTML=empty('👥','No hay participantes confirmados aún');return;
+  }
+
+  // Partidos finalizados para calcular puntos
+  const finMatches = allMatches.filter(m=>m.status==='FINISHED');
+
+  // Calcular puntos totales por usuario
+  const userStats = {};
+  confirmedUserIds.forEach(uid=>{
+    const up = allUserPots.find(u=>u.user_id===uid&&u.confirmed);
+    userStats[uid] = {
+      name: up?.profiles?.display_name||'Jugador',
+      pts: 0, hits: 0, exact: 0, total: 0
+    };
+  });
+  finMatches.forEach(m=>{
+    allPreds.filter(p=>p.match_id===m.id&&confirmedUserIds.includes(p.user_id)).forEach(p=>{
+      if(!userStats[p.user_id])return;
+      const pts=calcPts(p.predicted_home,p.predicted_away,m.home_score,m.away_score);
+      if(pts!==null){
+        userStats[p.user_id].pts+=pts;
+        userStats[p.user_id].total++;
+        if(pts===5)userStats[p.user_id].exact++;
+        if(pts>0)userStats[p.user_id].hits++;
+      }
+    });
+  });
+
+  // Usuarios ordenados por puntos
+  const sortedUsers = Object.entries(userStats).sort((a,b)=>b[1].pts-a[1].pts);
+  const medals=['🥇','🥈','🥉'];
+
+  // Partidos a mostrar (todos o solo finalizados)
+  const matchesToShow = allMatches.filter(m=>m.status==='FINISHED');
+
+  let html = `
+    <h2 class="text-lg font-bold mb-4">👥 Picks de Todos</h2>
+
+    <!-- Tabla resumen de puntos -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-5">
+      <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">📊 Puntos Totales</h3>
+      <div class="space-y-2">
+        ${sortedUsers.map(([uid,d],i)=>{
+          const me = uid===session?.user?.id;
+          return `<div class="flex items-center gap-3 py-2 ${i<sortedUsers.length-1?'border-b border-gray-800':''}">
+            <span class="text-lg w-7">${medals[i]??i+1}</span>
+            <span class="flex-1 font-semibold ${me?'text-green-400':'text-white'}">${d.name}${me?' (Tú)':''}</span>
+            <span class="text-xs text-gray-500">${d.exact} exactos · ${d.hits}/${d.total} aciertos</span>
+            <span class="text-xl font-extrabold text-yellow-400 w-10 text-right">${d.pts}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  if(!matchesToShow.length){
+    html += empty('⏳','Los picks aparecerán aquí cuando terminen los partidos');
+    container.innerHTML=html; return;
+  }
+
+  // Picks por partido
+  html += `<h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">📋 Picks por Partido</h3>
+    <div class="space-y-4">`;
+
+  matchesToShow.forEach(m=>{
+    const predsForMatch = allPreds.filter(p=>p.match_id===m.id&&confirmedUserIds.includes(p.user_id));
+    html += `<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div class="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+        <div>
+          <span class="text-xs text-gray-500">Grupo ${m.group_name??''} · J${m.matchday??''}</span>
+          <div class="font-bold text-sm mt-0.5">${m.home_team} <span class="text-green-400">${m.home_score}-${m.away_score}</span> ${m.away_team}</div>
+        </div>
+        <span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">Finalizado</span>
+      </div>
+      <div class="divide-y divide-gray-800">`;
+
+    // Mostrar pick de cada usuario confirmado
+    sortedUsers.forEach(([uid,ud])=>{
+      const pred = predsForMatch.find(p=>p.user_id===uid);
+      const pts = pred ? calcPts(pred.predicted_home,pred.predicted_away,m.home_score,m.away_score) : null;
+      const me = uid===session?.user?.id;
+      const ptColor = pts===5?'text-green-400':pts===3?'text-yellow-400':pts===0?'text-red-400':'text-gray-600';
+      const ptBg = pts===5?'bg-green-900/30':pts===3?'bg-yellow-900/30':pts===0?'bg-red-900/20':'';
+      html += `<div class="flex items-center gap-3 px-4 py-2.5 ${ptBg}">
+        <span class="text-sm font-semibold w-24 truncate ${me?'text-green-400':'text-gray-300'}">${ud.name}</span>
+        <span class="flex-1 text-center font-bold ${pred?ptColor:'text-gray-600'}">
+          ${pred?`${pred.predicted_home} - ${pred.predicted_away}`:'Sin pick'}
+        </span>
+        <span class="text-sm font-extrabold w-8 text-right ${ptColor}">
+          ${pts!==null?pts+'pts':'–'}
+        </span>
+        <span class="text-xs w-6 text-center">
+          ${pts===5?'🎯':pts===3?'✅':pts===0?'❌':''}
+        </span>
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
 function renderAdmin(){
   if(!profile?.is_admin){el('admin-container').innerHTML='<p class="text-red-400">Acceso no autorizado</p>';return;}
   const pending=allMatches.filter(m=>m.status!=='FINISHED').slice(0,15);
@@ -631,6 +743,22 @@ function renderAdmin(){
             <input type="number" min="0" id="ra-${m.id}" placeholder="Visit." class="w-16 bg-gray-700 border border-gray-600 rounded-lg p-2 text-center text-white text-sm"/>
             <button onclick="saveResult(${m.id})" class="bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-bold ml-1">Guardar</button>
           </div>
+        </div>`).join('')}</div>`}
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <h3 class="font-bold mb-1">🗑️ Resetear Resultados</h3>
+      <p class="text-xs text-gray-400 mb-3">Borra el resultado de un partido y lo regresa a Pendiente</p>
+      ${!allMatches.filter(m=>m.status==='FINISHED').length
+        ? '<p class="text-gray-500 text-sm">No hay partidos finalizados</p>'
+        : `<div class="space-y-2">${allMatches.filter(m=>m.status==='FINISHED').map(m=>`
+        <div class="bg-gray-800 rounded-xl p-3 flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold">${m.home_team} <span class="text-green-400">${m.home_score}-${m.away_score}</span> ${m.away_team}</div>
+            <div class="text-xs text-gray-500">${new Date(m.match_date).toLocaleDateString('es-MX',{dateStyle:'medium'})}</div>
+          </div>
+          <button onclick="resetResult(${m.id})" class="bg-red-800 hover:bg-red-700 text-red-300 text-xs px-3 py-2 rounded-lg font-bold">
+            🗑️ Resetear
+          </button>
         </div>`).join('')}</div>`}
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -697,6 +825,18 @@ async function saveResult(matchId){
     await db.from('predictions').update({points:calcPts(p.predicted_home,p.predicted_away,h,a)}).eq('id',p.id);
   }
   toast('✅ Resultado guardado');await loadAll();renderAdmin();
+}
+
+async function resetResult(matchId){
+  if(!confirm('¿Seguro que quieres resetear este resultado? Se borrará el marcador y los puntos calculados.')) return;
+  const {error}=await db.from('matches').update({home_score:null,away_score:null,status:'SCHEDULED'}).eq('id',matchId);
+  if(error){toast('❌ Error al resetear','err');return;}
+  const {data:preds}=await db.from('predictions').select('id').eq('match_id',matchId);
+  for(const p of(preds||[])){
+    await db.from('predictions').update({points:null}).eq('id',p.id);
+  }
+  toast('✅ Resultado reseteado');
+  await loadAll();renderAdmin();
 }
 
 async function syncMatches(){
