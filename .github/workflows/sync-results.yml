@@ -12,6 +12,6 @@ jobs:
       - name: Call sync endpoint
         run: |
           curl -X GET \
-            -H "Authorization: Bearer mundial2026secret" \
+           -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -f -s -S \
             https://quiniela-mundial-2026-xwu4.vercel.app/api/sync-results
