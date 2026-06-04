@@ -558,21 +558,18 @@ function matchCard(m){
 async function submitPred(matchId){
   const ph=parseInt(el(`ph-${matchId}`)?.value),pa=parseInt(el(`pa-${matchId}`)?.value);
   if(isNaN(ph)||isNaN(pa)){toast('⚠️ Ingresa los dos marcadores','err');return;}
+  const {data:sessionData}=await db.auth.getSession();
+  if(!sessionData?.session){toast('❌ Sesión expirada, recarga la página','err');return;}
+  session=sessionData.session;
   const ex=myPreds[matchId]; let error;
-  console.log('submitPred:', matchId, 'ph:', ph, 'pa:', pa, 'existing:', ex);
   if(ex){
-    console.log('Updating existing pred id:', ex.id);
-    const result = await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id);
-    console.log('Update result:', result);
-    error = result.error;
+    ({error}=await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id));
     if(!error)myPreds[matchId]={...ex,predicted_home:ph,predicted_away:pa};
   }else{
-    console.log('Inserting new pred');
     const {data,error:e}=await db.from('predictions').insert({user_id:session.user.id,match_id:matchId,predicted_home:ph,predicted_away:pa}).select().single();
-    console.log('Insert result:', data, e);
     error=e; if(!error)myPreds[matchId]=data;
   }
-  if(error){console.error('Final error:', error);toast('❌ Error al guardar: '+error.message,'err');return;}
+  if(error){toast('❌ Error: '+error.message,'err');return;}
   toast('✅ Predicción guardada'); renderMatches();
 }
 
