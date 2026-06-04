@@ -387,7 +387,8 @@ function renderApp(){
   showApp();
   el('greeting').textContent=`Hola, ${profile?.display_name||''}!`;
   if(profile?.is_admin) el('tb-admin').classList.remove('hidden');
-  goTab('potes');
+  const savedTab = localStorage.getItem('activeTab')||'potes';
+  goTab(savedTab);
 }
 
 function goTab(tab){
@@ -396,6 +397,7 @@ function goTab(tab){
   el(`tab-${tab}`).classList.remove('hidden');
   el(`tb-${tab}`).classList.add('tab-active');
   el(`tb-${tab}`).classList.remove('text-gray-400');
+  localStorage.setItem('activeTab', tab);
   if(tab==='potes')      renderPotes();
   if(tab==='tabla')      renderLb();
   if(tab==='partidos')   { loadMyPreds().then(()=>renderMatches()); }
