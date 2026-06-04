@@ -379,7 +379,7 @@ function goTab(tab){
   el(`tb-${tab}`).classList.remove('text-gray-400');
   if(tab==='potes')      renderPotes();
   if(tab==='tabla')      renderLb();
-  if(tab==='partidos')   renderMatches();
+  if(tab==='partidos')   { loadMyPreds().then(()=>renderMatches()); }
   if(tab==='mispicks')   renderMyPicks();
   if(tab==='todospicks') renderTodosPicks();
   if(tab==='admin')      renderAdmin();
@@ -559,14 +559,20 @@ async function submitPred(matchId){
   const ph=parseInt(el(`ph-${matchId}`)?.value),pa=parseInt(el(`pa-${matchId}`)?.value);
   if(isNaN(ph)||isNaN(pa)){toast('⚠️ Ingresa los dos marcadores','err');return;}
   const ex=myPreds[matchId]; let error;
+  console.log('submitPred:', matchId, 'ph:', ph, 'pa:', pa, 'existing:', ex);
   if(ex){
-    ({error}=await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id));
+    console.log('Updating existing pred id:', ex.id);
+    const result = await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id);
+    console.log('Update result:', result);
+    error = result.error;
     if(!error)myPreds[matchId]={...ex,predicted_home:ph,predicted_away:pa};
   }else{
+    console.log('Inserting new pred');
     const {data,error:e}=await db.from('predictions').insert({user_id:session.user.id,match_id:matchId,predicted_home:ph,predicted_away:pa}).select().single();
+    console.log('Insert result:', data, e);
     error=e; if(!error)myPreds[matchId]=data;
   }
-  if(error){toast('❌ Error al guardar','err');return;}
+  if(error){console.error('Final error:', error);toast('❌ Error al guardar: '+error.message,'err');return;}
   toast('✅ Predicción guardada'); renderMatches();
 }
 
