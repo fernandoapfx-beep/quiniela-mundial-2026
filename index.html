@@ -225,7 +225,26 @@ const SUPABASE_URL = 'https://qxebgqqyyvknmlmqebgq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_FVmzGuPA45n9qyET5IR3Dg_oRkNgxpg';
 const INVITE_CODE  = 'MUNDIAL2026';
 const {createClient} = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+let db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true },
+  realtime: { timeout: 10000 }
+});
+
+// Reconectar Supabase si se cae
+async function getDb(){
+  try {
+    const {data} = await Promise.race([
+      db.auth.getSession(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),3000))
+    ]);
+    if(data?.session) return db;
+  } catch(e) {}
+  // Recrear cliente si no responde
+  db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+  return db;
+}
 
 let session=null, profile=null;
 let allMatches=[], myPreds={}, allPreds=[];
@@ -558,15 +577,16 @@ function matchCard(m){
 async function submitPred(matchId){
   const ph=parseInt(el(`ph-${matchId}`)?.value),pa=parseInt(el(`pa-${matchId}`)?.value);
   if(isNaN(ph)||isNaN(pa)){toast('⚠️ Ingresa los dos marcadores','err');return;}
-  const {data:sessionData}=await db.auth.getSession();
+  const client = await getDb();
+  const {data:sessionData}=await client.auth.getSession();
   if(!sessionData?.session){toast('❌ Sesión expirada, recarga la página','err');return;}
   session=sessionData.session;
   const ex=myPreds[matchId]; let error;
   if(ex){
-    ({error}=await db.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id));
+    ({error}=await client.from('predictions').update({predicted_home:ph,predicted_away:pa}).eq('id',ex.id));
     if(!error)myPreds[matchId]={...ex,predicted_home:ph,predicted_away:pa};
   }else{
-    const {data,error:e}=await db.from('predictions').insert({user_id:session.user.id,match_id:matchId,predicted_home:ph,predicted_away:pa}).select().single();
+    const {data,error:e}=await client.from('predictions').insert({user_id:session.user.id,match_id:matchId,predicted_home:ph,predicted_away:pa}).select().single();
     error=e; if(!error)myPreds[matchId]=data;
   }
   if(error){toast('❌ Error: '+error.message,'err');return;}
